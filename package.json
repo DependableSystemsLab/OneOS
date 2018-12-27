@@ -1,0 +1,19 @@
+{
+  "name": "oneos",
+  "version": "0.0.1",
+  "description": "Overlay Network Operating System",
+  "main": "index.js",
+  "keywords": [
+    "Distributed Computing",
+    "Cloud Computing"
+  ],
+  "author": "Kumseok Jung",
+  "license": "MIT",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "eslint": "^5.10.0",
+    "mocha": "^5.2.0"
+  }
+}
