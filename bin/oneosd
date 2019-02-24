@@ -1,0 +1,25 @@
+#!/bin/sh
+":" //# start node with options; exec /usr/bin/env node --expose-gc $0 "$@"
+
+// the above is a hack to start a node process with arguments.
+// taken from sambal.org/2014/02/passing-options-node-shebang-line/
+
+const Runtime = require('../lib/core/Runtime.js');
+
+const configLoader = require('./scripts/config-loader.js');
+
+configLoader.load().then((config)=>{
+	let useId = process.argv[2];
+	if (useId) config.id = useId;
+
+	const runtime = new Runtime(config, {
+	  // enable_status_led: options.statusLED
+	});
+
+	process.on('SIGINT', function(){
+	  runtime.kill()
+	    .then(function(){
+	    process.exit();
+	  })
+	});	
+});

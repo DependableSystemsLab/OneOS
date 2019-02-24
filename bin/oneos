@@ -1,0 +1,169 @@
+#! /usr/bin/env node
+
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const chalk = require('chalk');
+const program = require('commander');
+const helpers = require('../lib/helpers.js');
+
+const homedir = os.homedir();
+const oneos_dir = path.join(homedir, '.oneos');
+
+var VERSION = '0.0.1';
+
+program
+  .version(VERSION)
+  .description('Framework for building IoT systems')
+
+program
+  .command('pubsub-daemon')
+  .alias('psd')
+  .option('-p, --port <port>', 'Port to Listen to')
+  // .option('-d, --debug', 'Set environment variable DEBUG to "true" and see debug output')
+  .description('Start a Pubsub Server')
+  .action(function(options){
+    process.env['DEBUG'] = options.debug ? "true": "false";
+    var PubsubServer = require('../lib/core/PubsubServer.js');
+    var server = new PubsubServer({
+      port: options.port
+    });
+    process.on('SIGINT', function(){
+      server.kill().then(function(){
+          process.exit();
+        })
+    });
+
+  });
+
+program
+  .command('name-server')
+  .alias('ns')
+  .option('-p, --port <port>', 'Port to Listen to')
+  // .option('-d, --debug', 'Set environment variable DEBUG to "true" and see debug output')
+  .description('Start a NameServer')
+  .action(function(options){
+    process.env['DEBUG'] = options.debug ? "true": "false";
+    var NameServer = require('../lib/core/NameServer.js');
+    var server = new NameServer({
+      port: options.port
+    });
+    process.on('SIGINT', function(){
+      server.kill().then(function(){
+          process.exit();
+        })
+    });
+
+  });
+
+program
+  .command('instrument <file_path>')
+  .option('-s, --save <save_path>', 'File path to optionally save instrumented code')
+  .option('-d, --debug', 'Set environment variable DEBUG to "true" and see debug output')
+  .alias('inst')
+  .description('Instrument raw JavaScript code to make it migratable')
+  .action(function(file_path, options){
+    process.env['DEBUG'] = options.debug ? "true": "false";
+    var Code = require('../lib/core/Code.js');
+    var code = Code.fromFile(file_path);
+    if (options.save) code.save(options.save);
+    else console.log(code.source);
+  });
+
+program
+  .command('execute <file_path>')
+  .option('-r, --restore', 'Restore from snapshot and run')
+  .option('-d, --debug', 'Set environment variable DEBUG to "true" and see debug output')
+  .alias('exec')
+  .description('Instrument and Execute JavaScript program as a OneOS Agent')
+  .action(function(file_path, options){
+    process.env['DEBUG'] = options.debug ? "true": "false";
+    // var Code = require('../lib/core/Code.js');
+    var Runtime = require('../lib/core/Runtime.js');
+    var Agent = require('../lib/core/Agent.js');
+
+    // var code = Code.fromFile(file_path);
+    var mode = options.restore ? 'snapshot' : 'javascript';
+    var source = fs.readFileSync(file_path).toString();
+    if (mode === 'snapshot') source = JSON.parse(source);
+    var code_name = path.basename(file_path);
+    var agent_id = code_name+'.'+helpers.randKey();
+    var agent = new Agent(Runtime.createDummy(), {
+        // pubsub_url: self.pubsub.url,
+        id: agent_id,
+        name: code_name,
+        source: source,
+        language: mode,
+        pipes: []
+      }, {
+        localStdio: true,
+        snapshotInterval: null
+        // isOpaque: true
+      });
+    agent.on('status-change', (event)=>{
+      if (event.status === 'Exited') process.exit();
+    });
+    process.chdir(oneos_dir);
+    agent.start({});
+
+    if(process.stdin.isTTY){
+      process.stdin.setRawMode( true );
+    }
+    process.stdin.setEncoding('utf8');
+    process.stdin.on('data', function(key){
+      switch(key.trim()){
+          case 'p':
+              agent.pause();
+              break;
+
+          case 'r':
+              agent.resume();
+              break;
+
+          case 's':
+            agent.snapshot().then(console.log);
+            break;
+
+          case 'q':
+              agent.kill();
+              process.exit();
+              break;
+
+          case '\u0003':
+              agent.kill();
+              process.exit();
+
+          default:
+              console.log(key);
+      }
+
+    });
+
+  });
+
+program
+  .command('readmeta <file_path>')
+  .option('-d, --debug', 'Set environment variable DEBUG to "true" and see debug output')
+  .alias('meta')
+  .description('Instrument raw JavaScript code to make it migratable')
+  .action(function(file_path, options){
+    process.env['DEBUG'] = options.debug ? "true": "false";
+    var Code = require('../lib/core/Code.js');
+    var meta = Code.readMetadata(fs.readFileSync(file_path, 'utf8'));
+    helpers.prettyPrint(meta);
+    console.log(JSON.stringify(meta));
+  });
+
+program.parse(process.argv);
+
+if (process.argv.length === 2){
+  const Runtime = require('../lib/core/Runtime.js');
+  const configLoader = require('./scripts/config-loader.js');
+
+  configLoader.load().then((config)=>{
+    if (process.argv.length === 2){
+      const Shell = require('../lib/core/Shell.js').Client;
+      let client = new Shell(config.pubsub_url);
+    }
+  })
+}

@@ -1,7 +1,7 @@
 **/node_modules/**
+*.log
+/src/papers/*
 /dev
-/bin
-/lib
-/test
-README.md
-.eslintrc.json
+/semantic.json
+/semantic/*
+/webpack.dev.js

@@ -1,0 +1,32 @@
+.terminal-console {
+	background: black;
+	color: white;
+	min-height: 1em;
+	max-height: 16em;
+	overflow: auto;
+	padding: 0.5em;
+}
+.terminal-console p {
+	font-size: 1em;
+	font-family: Courier New;
+	font-weight: 600;
+	line-height: 1em;
+	margin-bottom: 4px;
+	word-wrap: break-word;
+	white-space: pre-wrap;
+}
+.terminal-input{
+	font-size: 1.25em;
+	font-family: Consolas, Courier New, Monospace;
+	font-weight: 600;
+	line-height: 1em;
+	margin-bottom: 4px;
+	padding-left: 0.5em;
+	word-wrap: break-word;
+	white-space: pre-wrap;
+	width: 100%;
+	background: black;
+	color: white;
+	outline: none;
+	border: rgba(255,255,255,0.5);
+}
