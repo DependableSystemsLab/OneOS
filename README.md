@@ -2,6 +2,8 @@
 
 OneOS is a high-level middleware-based distributed operating system providing a single system image of a heterogeneous computer network. Each machine is represented as a resource within OneOS, and the OneOS Scheduler allocates jobs on the appropriate machines. Pipes can be created between processes similar to how it is done in UNIX systems; OneOS pipes are created over TCP.
 
+* [Poster](http://ece.ubc.ca/~kumseok/assets/OneOS-Poster-EuroSys19.pdf), [Abstract](https://www.eurosys2019.org/wp-content/uploads/2019/03/eurosys19posters-abstract72.pdf), and [Demo Video (No Sound)](http://ece.ubc.ca/~kumseok/assets/OneOS-Demo-EuroSys19.mp4) - [EuroSys2019](https://www.eurosys2019.org/accepted-posters/)
+
 
 ## Usage
 
