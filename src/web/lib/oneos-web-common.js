@@ -1,6 +1,29 @@
 const { EventEmitter } = require('events');
 const uuid = require('uuid/v4');
 
+const SERIALIZERS = {
+  'default': (d)=>((d instanceof Buffer) ? d : JSON.stringify(d)),
+  // 'default': (d)=>((typeof d === 'object') ? JSON.stringify(d) : d),
+  'json': (d)=>JSON.stringify(d),
+  'text': (d)=>String(d),
+  'buffer': (d)=>d
+}
+const DESERIALIZERS = {
+  'default': (data)=>
+  {
+    try {
+        return JSON.parse(String(data));
+      }
+      catch (e){
+        // console.log('Error deserializing data of type '+(typeof data)+', '+Object.getPrototypeOf(data).constructor.name);
+        return data;
+      }
+  },
+  'json': (d)=>JSON.parse(String(d)),
+  'text': (d)=>String(d),
+  'buffer': (d)=>d
+}
+
 /* MqttWsClient */
 export class MqttWsClient extends EventEmitter {
 	constructor (wss_url, options){
@@ -47,9 +70,10 @@ export class MqttWsClient extends EventEmitter {
 			};
 			this.socket.onmessage = (event)=>{
 				var data = JSON.parse(event.data);
+        // console.log(data);
 				// console.log('  -> '+data.topic, data.message);
 				if (data.topic in this.subscriptions){
-					this.emit('msg:'+data.topic, data.message);
+					this.emit('msg:'+data.topic, Buffer.from(data.message, 'base64'));
 					// Object.values(this.subscriptions[data.topic].handlers)
 					// 	.forEach((handler)=>{
 					// 		handler(data.topic, data.message);
@@ -65,7 +89,7 @@ export class MqttWsClient extends EventEmitter {
 
 	// potentially many objects will share this single instance to subscribe to the pubsub server,
 	// so we must handle first time subscription
-	subscribe (topic, handler){
+	subscribe (topic, handler, content_type='default'){
 		return this.ready.then((socket)=>{
 			if (!(topic in this.subscriptions)){
 				this.subscriptions[topic] = {
@@ -74,7 +98,11 @@ export class MqttWsClient extends EventEmitter {
 				}
 
 				if (this.socket.readyState === WebSocket.OPEN){
-					this.socket.send(JSON.stringify({ action: 'subscribe', topic: topic }));
+					this.socket.send(JSON.stringify({ 
+            action: 'subscribe', 
+            topic: topic
+            // content_type: content_type
+          }));
 					// console.log("Subscribed to "+topic+" - handler "+handler_id);
 				}
 				else {
@@ -82,18 +110,27 @@ export class MqttWsClient extends EventEmitter {
 				}
 			}
 
-			this.on('msg:'+topic, handler);
+      let ref = (data)=>handler(DESERIALIZERS[content_type](data));
+			// this.on('msg:'+topic, handler);
+      this.on('msg:'+topic, ref);
+      return ref;
 		});
 	}
 
-	publish (topic, message){
+	publish (topic, message, content_type='default'){
 	    return this.ready.then((socket)=>{
 	    	if (socket.readyState === WebSocket.OPEN){
-				socket.send(JSON.stringify({ action: 'publish', topic: topic, message: message }));
-				console.log("Published "+topic, message)
-				return true;
-			}
-			else return Promise.reject(new Error('WebSocket not open, cannot publish to '+topic));
+  				// socket.send(JSON.stringify({ action: 'publish', topic: topic, message: message }));
+          socket.send(JSON.stringify({ 
+            action: 'publish', 
+            topic: topic,
+            // content_type: content_type,
+            message: btoa(SERIALIZERS[content_type](message))
+          }));
+  				console.log("Published "+topic, message)
+  				return true;
+  			}
+  			else return Promise.reject(new Error('WebSocket not open, cannot publish to '+topic));
 	    });
 	  }
 

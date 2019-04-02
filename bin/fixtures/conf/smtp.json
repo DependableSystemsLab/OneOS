@@ -1,0 +1,7 @@
+{
+	"protocol": "smtps",
+	"host": "smtp.example.com",
+	"username": "me@example.com",
+	"password": "secretpassword",
+	"admin_email": "me@example.com"
+}

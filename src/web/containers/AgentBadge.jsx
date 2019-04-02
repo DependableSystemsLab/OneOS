@@ -39,7 +39,7 @@ class AgentBadge extends React.Component {
 					<Popup trigger={
 						<Button as='div' labelPosition='right' size='small' compact>
 							<Button color={COLOR_MAP[this.props.agent.status]} compact>
-								{this.props.agent.isDaemon ? <Label inverted circular floating color='black'>D</Label> : null}
+								{this.props.agent.isDaemon ? <Label circular floating color='black'>D</Label> : null}
 								{this.props.agent.id}
 							</Button>
 							<Label as='a' basic color={COLOR_MAP[this.props.agent.status]} pointing='left'>

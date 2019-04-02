@@ -6,8 +6,8 @@ var ffmpeg = require('fluent-ffmpeg');
 var outStream = process.output('webcam');
 
 var cmd = ffmpeg('/dev/video0')
-		.inputOptions(['-f v4l2', '-framerate 25', '-video_size 320x240'])
-		.outputOptions(['-b 300k', '-f image2pipe'])
+		.inputOptions(['-f v4l2', '-framerate 15', '-video_size 320x240'])
+		.outputOptions(['-b 300k', '-r 15', '-f image2pipe'])
 		.output(outStream)
 		.noAudio()
 		.on('start', function(rawcmd){

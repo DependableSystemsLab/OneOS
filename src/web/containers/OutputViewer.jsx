@@ -21,24 +21,10 @@ class OutputViewer extends React.Component {
 
 	componentDidMount(){
 		console.log('[OutputViewer] Component Mounted '+this.props.agent);
-		this.handler = (message)=>{
-			if (this.state.dataType === 'string'){
-				this.setState({
-					lines: this.state.lines.concat([Buffer.from(message.data, 'base64').toString('utf8')])
-				});	
-			}
-			else if (this.state.dataType === 'image'){
-				// console.log('[OutputViewer] '+this.props.agent+':'+this.state.channel, message);
-				this.setState({
-					imageSrc: 'data:image/png;base64,'+message.data
-				});
-			}
-			// console.log()
-			
-			
-			this.refs.terminal.scrollTop = this.refs.terminal.scrollHeight;
-		};
-		this.sys.pubsub.subscribe(this.props.agent+':'+this.state.channel, this.handler);
+		this.sys.pubsub.subscribe(this.props.agent+':'+this.state.channel, (message)=>this.updateData(message))
+		.then((ref)=>{
+			this.handler = ref;
+		});
 	}
 
 	componentDidUpdate(prevProps, prevState, snapshot){
@@ -57,13 +43,33 @@ class OutputViewer extends React.Component {
 			// 	// console.log('[OutputViewer]', message);
 			// 	this.refs.terminal.scrollTop = this.refs.terminal.scrollHeight;
 			// };
-			this.sys.pubsub.subscribe(this.props.agent+':'+this.state.channel, this.handler);
+			this.sys.pubsub.subscribe(this.props.agent+':'+this.state.channel, (message)=>this.updateData(message))
+			.then((ref)=>{
+				this.handler = ref;
+			});
 		}
 	}
 
 	componentWillUnmount(){
 		console.log('Unmounting...')
 		this.sys.pubsub.unsubscribe(this.props.agent+':'+this.state.channel, this.handler);
+	}
+
+	updateData (message){
+		// console.log(message);
+		if (this.state.dataType === 'string'){
+			this.setState({
+				// lines: this.state.lines.concat([Buffer.from(message.data, 'base64').toString('utf8')])
+				lines: this.state.lines.concat([ String(message) ])
+			});
+			this.refs.terminal.scrollTop = this.refs.terminal.scrollHeight;
+		}
+		else if (this.state.dataType === 'image'){
+			// console.log('[OutputViewer] '+this.props.agent+':'+this.state.channel, message);
+			this.setState({
+				imageSrc: 'data:image/png;base64,'+message.toString('base64')
+			});
+		}
 	}
 
 	setChannel (channel){
@@ -80,7 +86,10 @@ class OutputViewer extends React.Component {
 		// 	// console.log('[OutputViewer]', message);
 		// 	this.refs.terminal.scrollTop = this.refs.terminal.scrollHeight;
 		// };
-		this.sys.pubsub.subscribe(this.props.agent+':'+channel, this.handler);
+		this.sys.pubsub.subscribe(this.props.agent+':'+channel, (message)=>this.updateData(message))
+		.then((ref)=>{
+			this.handler = ref;
+		});
 		this.setState({
 			channel: channel
 		});

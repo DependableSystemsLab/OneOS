@@ -132,13 +132,13 @@ export class OneOSWebClient extends EventEmitter {
 
 		this.pubsub.subscribe('shell-session/1/out', (message)=>{
           console.log(message);
-          message = Buffer.from(message.data, 'base64').toString('utf8');
+          // message = Buffer.from(message.data, 'base64').toString('utf8');
           this.emit('shell-output', message);
           this.shell_output.push(message);
           // var resolve = queue.shift();
           // console.log('Hey '+resolve);
           // (resolve && resolve(String(message)));
-        });
+        }, 'text');
 
         this.sensors.on('update', (sensors)=>this.emit('sensor-updated', sensors));
 
@@ -194,7 +194,7 @@ export class OneOSWebClient extends EventEmitter {
 	}
 
 	shellRequest (cmd) {
-		return this.pubsub.publish('shell-session/1/in', cmd+'\n');
+		return this.pubsub.publish('shell-session/1/in', Buffer.from(cmd+'\n'));
 		// return new Promise((resolve, reject)=>{
 		// 	$.ajax({
 		// 		method: 'POST',

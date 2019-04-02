@@ -1,4 +1,7 @@
 const FILESYSTEM_FIXTURE = {
+	'conf': {
+		'smtp.json': 'smtp.json'
+	},
 	'code': {
 		'samples': {
 			'factorial.js': 'factorial.js',
@@ -14,7 +17,9 @@ const FILESYSTEM_FIXTURE = {
 			'graphql.js': 'graphql.js',
 			'hash.js': 'hash.js',
 			'observer.js': 'observer.js',
-			'detector.js': 'detector.js'
+			'detector.js': 'detector.js',
+			'notifier.js': 'notifier.js',
+			'recorder.js': 'recorder.js'
 		},
 		'lambda': {
 			'add.js': 'add.js',

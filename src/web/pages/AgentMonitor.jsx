@@ -126,7 +126,7 @@ class AgentMonitor extends React.Component {
 
 		return (
 			<Grid stackable columns={2}>
-				<Grid.Column width={6}>
+				<Grid.Column width={8}>
 					<Segment.Group>
 						<Header attached='top' color={COLOR_MAP[this.state.agent.status]} inverted>
 							<span className='date'>{formatTime(this.state.agent.stat.elapsed)} (since {new Date(this.state.agent.stat.started_at).toLocaleString()})</span>
@@ -177,21 +177,15 @@ class AgentMonitor extends React.Component {
 							{controls}
 						</Segment>
 					</Segment.Group>
+
+					<OutputViewer agent={this.state.id} />
+					<input className='terminal-input'
+						ref={input=>{this.userInput = input; input && input.focus()}}
+						onKeyUp={this.onEnter.bind(this)}/>
+					
 				</Grid.Column>
-				<Grid.Column width={10}>
-					<Tab panes={[
-							{ menuItem: 'Resource Usage', render: ()=> (
-								<Tab.Pane>
-									<ResourceViewer agents={[this.state.id]} />
-								</Tab.Pane>) },
-							{ menuItem: 'Output', render: ()=> (
-								<Tab.Pane>
-									<OutputViewer agent={this.state.id} />
-									<input className='terminal-input'
-										ref={input=>{this.userInput = input; input && input.focus()}}
-										onKeyUp={this.onEnter.bind(this)}/>
-								</Tab.Pane>) }
-						]}/>
+				<Grid.Column width={8}>
+					<ResourceViewer agents={[this.state.id]} />
 				</Grid.Column>
 			</Grid>
 		)
