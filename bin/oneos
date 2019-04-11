@@ -158,7 +158,7 @@ program.parse(process.argv);
 
 if (process.argv.length === 2){
   const Runtime = require('../lib/core/Runtime.js');
-  const configLoader = require('./scripts/config-loader.js');
+  const configLoader = require('../lib/config-loader.js');
 
   configLoader.load().then((config)=>{
     if (process.argv.length === 2){

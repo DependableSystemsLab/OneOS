@@ -6,7 +6,7 @@
 
 const Runtime = require('../lib/core/Runtime.js');
 
-const configLoader = require('./scripts/config-loader.js');
+const configLoader = require('../lib/config-loader.js');
 
 configLoader.load().then((config)=>{
 	let useId = process.argv[2];
