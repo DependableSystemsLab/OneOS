@@ -2,26 +2,26 @@ const { EventEmitter } = require('events');
 const uuid = require('uuid/v4');
 
 const SERIALIZERS = {
-  'default': (d)=>((d instanceof Buffer) ? d : JSON.stringify(d)),
+  'default': d => ((d instanceof Buffer) ? d : Buffer.from(JSON.stringify(d))),
   // 'default': (d)=>((typeof d === 'object') ? JSON.stringify(d) : d),
-  'json': (d)=>JSON.stringify(d),
-  'text': (d)=>String(d),
-  'buffer': (d)=>d
+  'json': d => Buffer.from(JSON.stringify(d)),
+  'text': d => Buffer.from(d),
+  'buffer': d => d
 }
 const DESERIALIZERS = {
-  'default': (data)=>
+  'default': d =>
   {
     try {
-        return JSON.parse(String(data));
+        return JSON.parse(String(d));
       }
       catch (e){
         // console.log('Error deserializing data of type '+(typeof data)+', '+Object.getPrototypeOf(data).constructor.name);
-        return data;
+        return d;
       }
   },
-  'json': (d)=>JSON.parse(String(d)),
-  'text': (d)=>String(d),
-  'buffer': (d)=>d
+  'json': d => JSON.parse(String(d)),
+  'text': d => d.toString(),
+  'buffer': d => d
 }
 
 /* MqttWsClient */
@@ -68,12 +68,13 @@ export class MqttWsClient extends EventEmitter {
 		//			self.start();
 		//		}, 5000);
 			};
-			this.socket.onmessage = (event)=>{
+			this.socket.onmessage = event => {
 				var data = JSON.parse(event.data);
         // console.log(data);
 				// console.log('  -> '+data.topic, data.message);
 				if (data.topic in this.subscriptions){
 					this.emit('msg:'+data.topic, Buffer.from(data.message, 'base64'));
+          //this.emit('msg:'+data.topic, atob(data.message));
 					// Object.values(this.subscriptions[data.topic].handlers)
 					// 	.forEach((handler)=>{
 					// 		handler(data.topic, data.message);
@@ -125,7 +126,9 @@ export class MqttWsClient extends EventEmitter {
             action: 'publish', 
             topic: topic,
             // content_type: content_type,
-            message: btoa(SERIALIZERS[content_type](message))
+            //message: btoa(SERIALIZERS[content_type](message))
+            message: SERIALIZERS[content_type](message).toString('base64')
+            //message: SERIALIZERS[content_type](message)
           }));
   				console.log("Published "+topic, message)
   				return true;

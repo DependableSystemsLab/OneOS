@@ -14,7 +14,6 @@ const FILESYSTEM_FIXTURE = {
 			'reader.js': 'reader.js',
 			'dummy.js': 'dummy.js',
 			'lambda.js': 'lambda.js',
-			'graphql.js': 'graphql.js',
 			'hash.js': 'hash.js',
 			'observer.js': 'observer.js',
 			'detector.js': 'detector.js',

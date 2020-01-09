@@ -50,6 +50,8 @@ class RuntimeBadge extends React.Component {
 	}
 
 	render (){
+		let sumMemory = (this.props.runtime.stat.memory+this.props.runtime.stat.agent_memory+this.props.runtime.stat.daemon_memory) / 1000000;
+		let memPercent = (100 * sumMemory / this.props.runtime.limit_memory).toFixed(0);
 		return (
 			<React.Fragment>
 				<Dropdown trigger={
@@ -63,7 +65,7 @@ class RuntimeBadge extends React.Component {
 									{(this.props.runtime.stat.cpu + this.props.runtime.stat.agent_cpu + this.props.runtime.stat.daemon_cpu).toFixed(0)} %
 								</Label>
 								<Label as='a' basic color={COLOR_MAP[this.props.runtime.status]} pointing='left'>
-									{((this.props.runtime.stat.memory+this.props.runtime.stat.agent_memory+this.props.runtime.stat.daemon_memory)/1000000).toFixed(0)} MB
+									{sumMemory.toFixed(0)} MB ({memPercent} %)
 								</Label>
 							</Button>
 					} pointing='top left' icon={null}>

@@ -212,35 +212,35 @@ export class OneOSWebClient extends EventEmitter {
 	}
 
 	runAgent (agent_path, args) {
-		return this.shellRequest(agent_path+'('+args.join(',')+')');
+		return this.shellRequest(agent_path+' '+args.join(' '));
 	}
 
 	pauseAgent (agent_id) {
-		return this.shellRequest('pause("'+agent_id+'")')
+		return this.shellRequest('pause "'+agent_id+'"')
 	}
 
 	resumeAgent (agent_id) {
-		return this.shellRequest('resume("'+agent_id+'")')
+		return this.shellRequest('resume "'+agent_id+'"')
 	}
 
 	killAgent (agent_id) {
-		return this.shellRequest('kill("'+agent_id+'")')
+		return this.shellRequest('kill "'+agent_id+'"')
 	}
 
 	migrateAgent (agent_id, runtime_id) {
-		return this.shellRequest('migrate("'+agent_id+'", "'+runtime_id+'")')
+		return this.shellRequest('migrate "'+agent_id+'" "'+runtime_id+'"')
 	}
 
 	runAgentOnRuntime (agent_path, args, runtime_id) {
-		return this.shellRequest(agent_path+'('+args.join(',')+') @ '+runtime_id);
+		return this.shellRequest(agent_path+' '+args.join(',')+' @ '+runtime_id);
 	}
 
 	createPipe (source_topic, sink_topic){
-		return this.shellRequest('pipe("'+source_topic+'", "'+sink_topic+'")');
+		return this.shellRequest('pipe "'+source_topic+'" "'+sink_topic+'"');
 	}
 
 	destroyPipe (pipe_id){
-		return this.shellRequest('unpipe("'+pipe_id+'")');
+		return this.shellRequest('unpipe "'+pipe_id+'"');
 	}
 
 	readFileSystem (path) {

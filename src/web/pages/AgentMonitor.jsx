@@ -76,7 +76,7 @@ class AgentMonitor extends React.Component {
 	onEnter (e){
 		if (e.key === 'Enter'){
 			console.log('Publishing message '+e.target.value+' to '+this.state.id)
-			this.sys.pubsub.publish(this.state.id+':stdin', e.target.value);
+			this.sys.pubsub.publish(this.state.id+':stdin', e.target.value, 'text');
 			this.userInput.value = '';
 		}
 	}

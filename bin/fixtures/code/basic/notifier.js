@@ -1,6 +1,13 @@
 var nodemailer = require('nodemailer');
 var fs = require('oneos').fs();
 
+if (process.argv.length < 3){
+	console.log('Need to provide the recipient email as an argument.\n  e.g., notifier.js owner@example.com');
+	process.exit(1);
+}
+
+var recipient = process.argv[2];
+
 var predicates = [
 {
 	text: 'Event triggered during unexpected hours',
@@ -14,6 +21,10 @@ var predicates = [
 		}
 		return false;
 	}
+},
+{
+	text: 'Event needs immediate attention',
+	check: msg => (msg.severity == 'emergency')
 },
 ]
 
@@ -45,7 +56,8 @@ function start(config){
 
 			var mailOptions = {
 				    from: config.username,
-				    to: config.admin_email,
+				    to: recipient,
+				    cc: config.admin_email,
 				    subject: 'OneOS Email Alert',
 				    text: mailText,
 				    html: mailHtml

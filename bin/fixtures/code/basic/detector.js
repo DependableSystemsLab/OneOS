@@ -2,7 +2,7 @@ var jimp = require('jimp');
 
 /* configurable variables */
 var threshold = 0.10;
-var buf_size = 2;
+var buf_size = 10;
 var fps = 5;
 /* end of configurable variables */
 
@@ -12,6 +12,8 @@ var alarmStream = process.output('alarm', 'json');
 
 var frames = [];
 var frame_count = 0;
+
+var exceeded = 0;
 
 function detectMotion(){
 	if (frames.length >= buf_size){
@@ -26,17 +28,20 @@ function detectMotion(){
 				});
 				
 				if (diff.percent > threshold){
-					console.log(frame_count+' '+(new Date().toISOString())+" Motion Detected !!!");
-					alarmStream.write({
-						timestamp: Date.now(),
-						status: true
-					});
+					exceeded ++;
+					
+					if (exceeded == 3){
+						console.log(frame_count+' '+(new Date().toISOString())+" Motion Detected !!!");
+						alarmStream.write({
+							timestamp: Date.now(),
+							message: "Motion Detected!",
+							severity: "emergency"
+						});
+					}
+
 				}
 				else {
-					alarmStream.write({
-						timestamp: Date.now(),
-						status: false
-					});
+					exceeded = 0;
 				}
 		}
 		

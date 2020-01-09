@@ -14,7 +14,7 @@ import SystemMonitor from './pages/SystemMonitor.jsx';
 import FileSystem from './pages/FileSystem.jsx';
 import Applications from './pages/Applications.jsx';
 
-const wss_url = 'wss://'+window.location.hostname+':'+window.location.port+'/pubsub';
+const wss_url = 'ws://'+window.location.hostname+':'+window.location.port+'/pubsub';
 
 class App extends Component{
     constructor(){

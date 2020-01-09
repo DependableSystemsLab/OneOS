@@ -15,13 +15,13 @@ class OutputViewer extends React.Component {
 			channel: 'stdout',
 			dataType: 'string',
 			lines: [],
-			imageSrc: 'data:image/png;base64,'
+			imageSrc: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAQAAAD8fJRsAAAAEklEQVR42mNsqGfAChhHJdABAI2tDAEwAsbiAAAAAElFTkSuQmCC'
 		}
 	}
 
 	componentDidMount(){
 		console.log('[OutputViewer] Component Mounted '+this.props.agent);
-		this.sys.pubsub.subscribe(this.props.agent+':'+this.state.channel, (message)=>this.updateData(message))
+		this.sys.pubsub.subscribe(this.props.agent + ':' + this.state.channel, message =>this.updateData(message))
 		.then((ref)=>{
 			this.handler = ref;
 		});
@@ -43,7 +43,7 @@ class OutputViewer extends React.Component {
 			// 	// console.log('[OutputViewer]', message);
 			// 	this.refs.terminal.scrollTop = this.refs.terminal.scrollHeight;
 			// };
-			this.sys.pubsub.subscribe(this.props.agent+':'+this.state.channel, (message)=>this.updateData(message))
+			this.sys.pubsub.subscribe(this.props.agent + ':' + this.state.channel, message => this.updateData(message))
 			.then((ref)=>{
 				this.handler = ref;
 			});

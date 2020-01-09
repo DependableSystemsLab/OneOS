@@ -80,16 +80,16 @@ class Home extends React.Component {
 								  		<Statistic.Label>CPU Usage</Statistic.Label>
 								  	</Statistic>
 								  	<Statistic>
-								  		<Statistic.Value>{(this.sys.resource.memory.used/1e9).toFixed(3)+' / '+(this.sys.resource.memory.total/1e9).toFixed(3)+' GB'} <small>({cpuPercent})</small></Statistic.Value>
+								  		<Statistic.Value>{(this.sys.resource.memory.used/1e9).toFixed(3)+' / '+(this.sys.resource.memory.total/1e9).toFixed(3)+' GB'} <small>({memPercent})</small></Statistic.Value>
 								  		<Statistic.Label>Memory Usage</Statistic.Label>
 								  	</Statistic>
 							  		<Statistic>
 								  		<Statistic.Value>{Object.keys(this.sys.runtimes).length}</Statistic.Value>
-								  		<Statistic.Label>Runtimes</Statistic.Label>
+								  		<Statistic.Label>Runtimes in the cluster</Statistic.Label>
 								  	</Statistic>
 								  	<Statistic>
 								  		<Statistic.Value>{Object.keys(this.sys.agents).length}</Statistic.Value>
-								  		<Statistic.Label>Agents</Statistic.Label>
+								  		<Statistic.Label>Agents running</Statistic.Label>
 								  	</Statistic>
 								  </Statistic.Group>
 							</Card.Content>
@@ -99,7 +99,7 @@ class Home extends React.Component {
 					<Grid.Column width={5}>
 						<Card fluid>
 							<Card.Content>
-								<Card.Header>Runtimes</Card.Header>
+								<Card.Header>Cluster</Card.Header>
 								<Divider/>
 								<List divided>
 				              	{
