@@ -7,7 +7,8 @@ const FILESYSTEM_FIXTURE = {
 			'factorial.js': 'factorial.js',
 			'hello-world.py': 'hello-world.py',
 			'dummy-cpu.js': 'dummy-cpu.js',
-			'dummy-memory.js': 'dummy-memory.js'
+			'dummy-memory.js': 'dummy-memory.js',
+			'streamer-app.osh': 'streamer-app.osh'
 		},
 		'basic': {
 			'writer.js': 'writer.js',
