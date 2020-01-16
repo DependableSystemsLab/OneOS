@@ -1,8 +1,9 @@
 import React from 'react';
-import {Grid, Card, List, Header, Icon, Statistic, Divider} from 'semantic-ui-react';
+import {Grid, Card, Table, List, Header, Icon, Statistic, Divider} from 'semantic-ui-react';
 
 import OneOSService from '../services/OneOSService.jsx';
 import Device3DView from '../components/Device3DView.jsx';
+import D3Progress from '../components/D3Progress.jsx';
 import RuntimeBadge from '../containers/RuntimeBadge.jsx';
 import AgentBadge from '../containers/AgentBadge.jsx';
 
@@ -101,16 +102,53 @@ class Home extends React.Component {
 							<Card.Content>
 								<Card.Header>Cluster</Card.Header>
 								<Divider/>
-								<List divided>
-				              	{
-				              		Object.values(this.sys.runtimes)
-				              			.map((runtime, index)=>(
-				              				<List.Item key={index}>
-				              					<RuntimeBadge runtime={runtime}/>
-										    </List.Item>
-				              			))
-					            }
-								</List>
+								<Table celled>
+								  <Table.Header>
+								      <Table.Row>
+					  				      <Table.HeaderCell>
+					  				        Node ID
+					  				      </Table.HeaderCell>
+					  				      <Table.HeaderCell>
+					  				        Platform
+					  				      </Table.HeaderCell>
+					  				      <Table.HeaderCell>
+					  				        Cores
+					  				      </Table.HeaderCell>
+					  				      <Table.HeaderCell>
+						  				    CPU Usage
+						  				  </Table.HeaderCell>
+						  				  <Table.HeaderCell>
+						  				    Memory Usage
+						  				  </Table.HeaderCell>
+					      			  </Table.Row>
+								    </Table.Header>
+								    <Table.Body>
+									    {
+						              		Object.values(this.sys.runtimes)
+						              			.map((runtime, index)=>(
+						              				<Table.Row key={index}>
+          				  								<Table.Cell>
+          				  									{ runtime.id }
+          				  								</Table.Cell>
+          				  								<Table.Cell>
+          				  									{ runtime.device.arch } { runtime.device.platform }
+          				  								</Table.Cell>
+          				  								<Table.Cell>
+          				  									{runtime.device.cpus.length} &#215; {(runtime.device.cpu_average_speed / 1000).toFixed(2)} GHz
+          				  								</Table.Cell>
+          				  								<Table.Cell>
+							              				    <D3Progress percent={(runtime.stat.cpu + runtime.stat.agent_cpu + runtime.stat.daemon_cpu)}/>
+							              				  	{(runtime.stat.cpu + runtime.stat.agent_cpu + runtime.stat.daemon_cpu).toFixed(1)} %
+							              				  </Table.Cell>
+							              				  <Table.Cell>
+							              				  	<D3Progress percent={(((runtime.stat.memory + runtime.stat.agent_memory + runtime.stat.daemon_memory) / 10000) / runtime.limit_memory)}/>
+							              				  	{((runtime.stat.memory + runtime.stat.agent_memory + runtime.stat.daemon_memory) / 1000000).toFixed(2)} / {runtime.limit_memory} MB
+							              				  </Table.Cell>
+          				  							</Table.Row>
+						              			))
+							            }
+								    </Table.Body>
+								</Table>
 							</Card.Content>
 						</Card>
 
@@ -118,20 +156,59 @@ class Home extends React.Component {
 							<Card.Content>
 								<Card.Header>Agents</Card.Header>
 								<Divider/>
-								<List divided>
-				              	{
-				              		Object.values(this.sys.agents)
-				              			.map((agent, index)=>(
-				              				<List.Item key={index}>
-				              					<AgentBadge agent={agent}/>
-										    </List.Item>
-				              			))
-				              	}
-							    </List>
+								<Table celled>
+								  <Table.Header>
+								      <Table.Row>
+					  				      <Table.HeaderCell>
+					  				        Agent ID
+					  				      </Table.HeaderCell>
+					  				      <Table.HeaderCell>
+					  				        Node
+					  				      </Table.HeaderCell>
+					  				      <Table.HeaderCell>
+						  				    CPU Usage
+						  				  </Table.HeaderCell>
+						  				  <Table.HeaderCell>
+						  				    Memory Usage
+						  				  </Table.HeaderCell>
+					      			  </Table.Row>
+								    </Table.Header>
+								    <Table.Body>
+									    {
+						              		Object.values(this.sys.agents)
+						              			.map((agent, index) => {
+						              				let runtime = this.sys.runtimes[agent.runtime];
+
+						              				return (
+							              				<Table.Row key={index}>
+	          				  								<Table.Cell>
+	          				  									{ agent.isDaemon ?
+	          				  										<Icon name="gavel"/> : null
+	          				  									}
+
+	          				  									{ agent.id }
+	          				  								</Table.Cell>
+	          				  								<Table.Cell>
+	          				  									{ agent.runtime }
+	          				  								</Table.Cell>
+	          				  								<Table.Cell>
+								              				    <D3Progress percent={agent.stat.cpu}/>
+								              				  	{agent.stat.cpu.toFixed(1)} %
+								              				  </Table.Cell>
+								              				  <Table.Cell>
+								              				  	<D3Progress percent={((agent.stat.memory / 10000) / runtime.limit_memory)}/>
+								              				  	{(agent.stat.memory / 1000000).toFixed(2)} / {runtime.limit_memory} MB
+								              				  </Table.Cell>
+	          				  							</Table.Row>
+							              			)
+						              			})
+							            }
+								    </Table.Body>
+								</Table>
 							</Card.Content>
 						</Card>
 					</Grid.Column>
-					<Grid.Column width={6}>
+					{/*<Grid.Column width={6}>
 						<Card fluid>
 							<Card.Content>
 								<Card.Header>Your Device</Card.Header>
@@ -175,7 +252,7 @@ class Home extends React.Component {
 								<Device3DView/>
 							</Card.Content>
 						</Card>
-					</Grid.Column>
+					</Grid.Column>*/}
 				</Grid>
 			</div>
 		)

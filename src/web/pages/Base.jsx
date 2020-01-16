@@ -178,10 +178,10 @@ class Base extends React.Component {
 		              <Icon name='folder open' />
 		              File System
 		            </Menu.Item>
-		            <Menu.Item as='a' onClick={(e)=>this.props.history.push('/apps/')}>
+		            {/*<Menu.Item as='a' onClick={(e)=>this.props.history.push('/apps/')}>
 		              <Icon name='th' />
 		              Applications
-		            </Menu.Item>
+		            </Menu.Item>*/}
 
 		            <Responsive as={React.Fragment} {...Responsive.onlyMobile}>
 		            	<Divider/>
@@ -249,9 +249,12 @@ class Base extends React.Component {
 
 		            <TransitionablePortal onClose={(e)=>this.setState({ portalOpen: false })}
 		            	open={this.state.portalOpen}>
-		            	<div style={{ position: 'fixed', top: this.state.portalMinimized ? '90%':'45%', left: '7%', width: '86%', zIndex: 2000 }}>
+		            	<div style={{ position: 'fixed', top: this.state.portalMinimized ? '90%':'45%', left: '10%', width: '80%', zIndex: 2000 }}>
 		            		<Segment raised>
 		            			<Menu size='mini' inverted color='blue' borderless>
+		            				<Menu.Item>
+		            					Terminal
+		            				</Menu.Item>
 									<Menu.Item position='right' onClick={(e)=>this.setState({ portalMinimized: !this.state.portalMinimized })}>
 										<Icon name={'window '+(this.state.portalMinimized ? 'maximize' : 'minimize')}/>
 									</Menu.Item>

@@ -155,7 +155,7 @@ class AgentMonitor extends React.Component {
 								<Label>{(this.state.agent.stat.memory / 1000000).toFixed(1)} MB</Label>
 							</Segment>
 							<Segment>
-								<List divided>
+								<List>
 								{
 									this.state.agent.output
 									.map((channel, index)=>(
@@ -178,7 +178,7 @@ class AgentMonitor extends React.Component {
 						</Segment>
 					</Segment.Group>
 
-					<OutputViewer agent={this.state.id} />
+					<OutputViewer channel={this.state.id + ":stdout"} />
 					<input className='terminal-input'
 						ref={input=>{this.userInput = input; input && input.focus()}}
 						onKeyUp={this.onEnter.bind(this)}/>

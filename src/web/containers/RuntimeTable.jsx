@@ -57,6 +57,12 @@ class RuntimeTable extends React.Component {
   				    <Table.HeaderCell>
   				      Runtime
   				    </Table.HeaderCell>
+              <Table.HeaderCell>
+                Platform
+              </Table.HeaderCell>
+              <Table.HeaderCell>
+                Cores
+              </Table.HeaderCell>
   				    <Table.HeaderCell>
   				      CPU Usage
   				    </Table.HeaderCell>
@@ -84,8 +90,13 @@ class RuntimeTable extends React.Component {
               				<Table.Row key={index}>
               				  <Table.Cell>
               				    <Header as='h3'>{runtime.id}</Header>
-              				    <RuntimeBadge runtime={runtime} verbose={true}/>
               				  </Table.Cell>
+                        <Table.Cell>
+                          {runtime.device.arch} {runtime.device.platform}
+                        </Table.Cell>
+                        <Table.Cell>
+                          {runtime.device.cpus.length} &#215; {(runtime.device.cpu_average_speed / 1000).toFixed(2)} GHz
+                        </Table.Cell>
               				  <Table.Cell>
               				    <D3Progress percent={(runtime.stat.cpu + runtime.stat.agent_cpu + runtime.stat.daemon_cpu)}/>
               				  	{(runtime.stat.cpu + runtime.stat.agent_cpu + runtime.stat.daemon_cpu).toFixed(1)} %
@@ -144,7 +155,7 @@ class RuntimeTable extends React.Component {
 			    </Table.Body>
           <Table.Footer>
             <Table.Row>
-              <Table.HeaderCell>
+              <Table.HeaderCell colSpan={3}>
                 <h4>System</h4>
               </Table.HeaderCell>
               <Table.HeaderCell>

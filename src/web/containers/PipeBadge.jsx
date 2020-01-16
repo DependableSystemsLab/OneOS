@@ -32,16 +32,21 @@ class PipeBadge extends React.Component {
 	}
 
 	render (){
-		let source = this.props.pipe.source.split(':');
-		let sink = this.props.pipe.sink.split(':');
+		let source = this.props.pipe.source;
+		let sink = this.props.pipe.sink;
+
+		let sourceAgent = this.sys.agents[source.agent];
+		let sinkAgent = this.sys.agents[sink.agent];
+
+		//console.log(this.sys.agents, source.agent, sink.agent);
 		return (
 			<Grid verticalAlign='middle'>
 				<Grid.Column width={7} textAlign='right'>
-					<Button compact color={COLOR_MAP[this.sys.agents[source[0]].status]}>
-						{source[0]}
+					<Button compact color={ sourceAgent ? COLOR_MAP[sourceAgent.status] : 'grey' }>
+						{source.agent}
 					</Button>
 					<Label>
-						{source[1]}
+						{source.channel}
 					</Label>
 				</Grid.Column>
 				<Grid.Column width={2} textAlign='center'>
@@ -57,10 +62,10 @@ class PipeBadge extends React.Component {
 				</Grid.Column>
 				<Grid.Column width={7} textAlign='left'>
 					<Label>
-						{sink[1]}
+						{sink.channel}
 					</Label>
-					<Button compact color={COLOR_MAP[this.sys.agents[sink[0]].status]}>
-						{sink[0]}
+					<Button compact color={ sinkAgent ? COLOR_MAP[sinkAgent.status] : 'grey' }>
+						{sink.agent}
 					</Button>
 				</Grid.Column>
 			</Grid>

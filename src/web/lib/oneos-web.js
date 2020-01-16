@@ -48,11 +48,11 @@ function computeTotalResource (runtimes){
 function getAgents (runtimes){
 	let agents = {};
 	Object.values(runtimes)
-		.forEach((runtime)=>{
-			runtime.agents.forEach((agent)=>{
+		.forEach(runtime => {
+			runtime.agents.forEach(agent => {
 				agents[agent.id] = agent;
 			});
-			runtime.daemons.forEach((agent)=>{
+			runtime.daemons.forEach(agent => {
 				agents[agent.id] = agent;
 			});
 		});
@@ -62,9 +62,29 @@ function getAgents (runtimes){
 function getPipes (runtimes){
 	let pipes = {};
 	Object.values(runtimes)
-		.forEach((runtime)=>{
-			runtime.pipes.forEach((pipe)=>{
+		.forEach(runtime => {
+			runtime.pipes.forEach(pipe => {
 				pipes[pipe.id] = pipe;
+
+				//console.log(pipe);
+				if (typeof pipe.source === 'string'){
+					// augmenting the pipe object
+					// to attach some properties
+					let source = pipe.source.split(':');
+					pipe.source = {
+						agent: source[0],
+						channel: source[1],
+						uri: pipe.source
+					};
+				}
+				if (typeof pipe.sink === 'string'){
+					let sink = pipe.sink.split(':');
+					pipe.sink = {
+						agent: sink[0],
+						channel: sink[1],
+						uri: pipe.sink
+					};
+				}
 			});
 		});
 	return pipes;
@@ -152,6 +172,29 @@ export class OneOSWebClient extends EventEmitter {
 				// this.emit('filesystem-updated', data);
 				// return data;
 			});
+	}
+
+	get channels(){
+		console.log(this.agents);
+		return Object.values(this.agents)
+			.map(agent => 
+				agent.input
+				.map(name => ({
+					type: 'input',
+					name: name,
+					agent: agent.id,
+					uri: agent.id + ':' + name
+				}))
+				.concat(
+					agent.output
+					.map(name => ({
+						type: 'output',
+						name: name,
+						agent: agent.id,
+						uri: agent.id + ':' + name
+					}))
+				)
+			).reduce((acc, cur) => acc.concat(cur), []);
 	}
 
 	refreshRuntimeInfo (){

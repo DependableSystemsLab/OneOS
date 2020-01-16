@@ -7,7 +7,9 @@ import AgentBadge from '../containers/AgentBadge.jsx';
 import RuntimeBadge from '../containers/RuntimeBadge.jsx';
 import RuntimeMap from '../containers/RuntimeMap.jsx';
 import RuntimeTable from '../containers/RuntimeTable.jsx';
+import AgentTable from '../containers/AgentTable.jsx';
 import AgentGraph from '../containers/AgentGraph.jsx';
+import StreamViewer from '../containers/StreamViewer.jsx';
 import QuickActionButton from '../containers/QuickActionButton.jsx';
 import AgentMonitor from './AgentMonitor.jsx';
 
@@ -67,18 +69,24 @@ class SystemMonitor extends React.Component {
 				</Header>
 				<Tab panes={
 					[{
-						menuItem: { key: 'table', icon: 'table', content: 'Table' },
-						render: ()=>(<RuntimeTable history={this.props.history}/>)
+						menuItem: { key: 'agents', icon: 'table', content: 'Agents' },
+						render: ()=>(<AgentTable history={this.props.history}/>)
 					},
 					{
+						menuItem: { key: 'runtimes', icon: 'table', content: 'Runtimes' },
+						render: ()=>(<RuntimeTable history={this.props.history}/>)
+					},
+					/*{
 						menuItem: { key: 'map', icon: 'world', content: 'Map' },
 						render: ()=>(<RuntimeMap history={this.props.history}/>)
-					},
+					},*/
 					{
 						menuItem: { key: 'graph', icon: 'code branch', content: 'Graph' },
 						render: ()=>(<AgentGraph history={this.props.history}/>)
 					}]
 				}/>
+
+				<StreamViewer/>
 
 				<Switch>
                     <Route path='/monitor/agent/:id' render={(props)=>(

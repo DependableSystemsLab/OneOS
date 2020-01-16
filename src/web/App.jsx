@@ -7,6 +7,7 @@ import {hot} from 'react-hot-loader';
 
 import AuthService from './services/AuthService.jsx';
 import OneOSService from './services/OneOSService.jsx';
+import AppStateService from './services/AppStateService.jsx';
 
 import Base from './pages/Base.jsx';
 import Home from './pages/Home.jsx';
@@ -22,9 +23,11 @@ class App extends Component{
     }
 
     render(){
+    	//<Route path='/apps' component={Applications}/>
         return(
         	<AuthService.Provider>
         	<OneOSService.Provider wss_url={wss_url}>
+        	<AppStateService.Provider>
 	        	<Router basename='/'>
 	                <div>
 	                    <Switch>
@@ -34,7 +37,6 @@ class App extends Component{
 	                                    <Route path='/' exact component={Home}/>
 	                                    <Route path='/monitor' component={SystemMonitor}/>
 	                                    <Route path='/fs/:cwd(.*)' component={FileSystem}/>
-	                                    <Route path='/apps' component={Applications}/>
 	                                    <Route render={(props)=>(
 	                                        <Message>
 	                                            <Message.Header>Page Not Found :(</Message.Header>
@@ -47,6 +49,7 @@ class App extends Component{
 	                    </Switch>
 	                </div>
 	        	</Router>
+	        </AppStateService.Provider>
 	        </OneOSService.Provider>
         	</AuthService.Provider>
         );

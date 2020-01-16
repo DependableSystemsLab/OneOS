@@ -183,8 +183,8 @@ class RuntimeMap extends React.Component {
 						{
 							Object.values(this.sys.pipes)
 								.map((pipe, index, list)=>{
-									let source = this.sys.agents[pipe.source.split(':')[0]];
-									let sink = this.sys.agents[pipe.sink.split(':')[0]];
+									let source = this.sys.agents[pipe.source.agent];
+									let sink = this.sys.agents[pipe.sink.agent];
 									let sourceXY = this.projection()([source.gps.long, source.gps.lat]);
 									let sinkXY = this.projection()([sink.gps.long, sink.gps.lat]);
 									let offsetSource = moveTowardsPoint(sourceXY[0], sourceXY[1], sinkXY[0], sinkXY[1], 15);

@@ -168,8 +168,8 @@ class AgentGraph extends React.Component {
 					{
 						Object.values(this.sys.pipes)
 							.map((pipe, index, list)=>{
-								let source = this.getXY( agents.indexOf(pipe.source.split(':')[0]), agents.length, width, height);
-								let sink = this.getXY( agents.indexOf(pipe.sink.split(':')[0]), agents.length, width, height );
+								let source = this.getXY( agents.indexOf(pipe.source.agent), agents.length, width, height);
+								let sink = this.getXY( agents.indexOf(pipe.sink.agent), agents.length, width, height );
 
 								let offsetSource = moveTowardsPoint(source.x, source.y, sink.x, sink.y, 20);
 								let offsetSink = moveTowardsPoint(sink.x, sink.y, source.x, source.y, 20);
