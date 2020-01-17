@@ -1,6 +1,6 @@
 {
   "name": "oneos",
-  "version": "20.01.0",
+  "version": "20.1.0",
   "description": "Overlay Network Operating System",
   "main": "lib/oneos.js",
   "files": [
@@ -27,12 +27,16 @@
     "Distributed Computing",
     "Distributed System",
     "Distributed Operating System",
+    "Virtual Operating System",
     "Operating System",
     "IoT",
     "Internet of Things",
     "Web of Things",
     "Edge Computing",
-    "Cloud Computing"
+    "Fog Computing",
+    "Cloud Computing",
+    "Grid Computing",
+    "Ambient Computing"
   ],
   "author": "Kumseok Jung",
   "license": "MIT",
