@@ -14,7 +14,7 @@ Here are some of the publications and other materials that discuss OneOS in more
 There are 2 ways to get started with OneOS. You can either:
 
 1. [Get the pre-built Docker image](#oneos-docker-image) and check out the sample OneOS grid configured in a `docker-compose.yml` file.
-2. [Manually Install](#installation) [from NPM](#from-npm) or [from this repository](#from-github), and follow the [next steps](#configuration) for configuring and running a OneOS grid.
+2. [Manually Install](#installation) [from NPM](#install-from-npm) or [from this repository](#install-from-github), and follow the [next steps](#configuration) for configuring and running a OneOS grid.
 
 
 ### OneOS Docker Image
@@ -33,23 +33,23 @@ Upon launching for the first time, Docker compose will pull the OneOS image from
 
 Of course, the Docker network you spawn would be running locally and so would all containers, but this should give you an idea of how OneOS would be deployed over the network, assuming each container runs on a separate machine.
 
-Once the network is running, you can open the OneOS Web Desktop at `//localhost:300N` where `N` is the index of the Runtime hosting the Web Desktop. (*The Web Desktop is meant to be served at a fixed ip:port, but the current implementation does not serve it this way. The user has to identify the correct ip:port manually*)
+Once the network is running, you can open the OneOS Web Desktop at `//localhost:300N` where `N` is the index of the Runtime hosting the Web Desktop. (*The Web Desktop is meant to be served at a fixed ip:port, but the current implementation does not serve it this way. The user has to identify the correct ip:port manually for now*)
 
 
 ### Installation
 
 If you choose to install OneOS yourself, there are 2 places to get the code:
 
-1. [From NPM](#from-npm): `npm install -g oneos`
-2. [From Github](#from-github): `git clone && npm install -g`
+1. [From NPM](#install-from-npm): `npm install -g oneos`
+2. [From Github](#install-from-github): `git clone` then `npm install -g`
 
 
 #### Dependencies
 
-* **MongoDB** - OneOS currently uses MongoDB as the storage backend. If you want to [install OneOS through NPM](#from-npm) or [by downloading this repository](#from-github), you will need to have access to a MongoDB server. (If you want to [get the OneOS Docker image](#oneos-docker-image), MongoDB is included in it and you don't need to install it separately.)
+* **MongoDB** - OneOS currently uses MongoDB as the storage backend. If you want to [install OneOS through NPM](#install-from-npm) or [by downloading this repository](#install-from-github), you will need to have access to a MongoDB server. (If you want to [get the OneOS Docker image](#oneos-docker-image), MongoDB is included in it and you don't need to install it separately.)
 
 
-#### from NPM
+#### Install from NPM
 
 If you use NodeJS, then you can install OneOS via NPM:
 
@@ -65,12 +65,12 @@ When you have access to a MongoDB service (we will assume the service is at `mon
 ~$ npm explore -g oneos -- npm run reset-fs mongodb://localhost:27017/oneos-fs
 ```
 
-The above command will spawn a new shell in the newly installed `oneos` directory (in the global `node_modules` directory), then run the `reset-fs` script which will initialize the OneOS file system by populating the MongoDB database it uses as a storage backend. There is a possibility the script may fail the first time you run the command (because it does not handle the case where the `oneos-fs` database does not exist); in this case, just run the above command again and it should work.
+The above command will spawn a new shell in the newly installed `oneos` directory (in the global `node_modules` directory), then run the `reset-fs` script which will initialize the OneOS file system by populating the MongoDB database it uses as a storage backend. There is a possibility the script may fail the first time you run the command (because currently it does not handle the case where the `oneos-fs` database does not exist); in this case, just run the above command again and it should work.
 
 After this, follow the next steps to [configure the OneOS Runtimes](#configuration).
 
 
-#### from Github
+#### Install from Github
 
 If you want to just download this repository and install it, then you can enter the following:
 
@@ -120,12 +120,17 @@ Then, start a OneOS Runtime on each of the devices A, B, and C by using the foll
 Upon initial boot, the user will be asked to configure the Runtime (interactive). The following parameters should be configured:
 
 * *Publish-Subscribe service URL:* Enter `mqtt://192.168.0.10` (IP of device A)
+* *Storage Backend URL:* Enter `mongodb://192.168.0.10:27017/oneos-fs` (IP of device A). The database name `oneos-fs` *must be included* in the URL.
 * *Runtime ID:* Leave it blank for random UUID, or enter a unique ID per each Runtime (e.g., `my-runtime-A`)
 * *Maximum memory allowed:* Leave it as default or enter a valid integer value
 * Whether the Runtime should be a Kernel Runtime (allowed to host Kernel Agents) - at least 1 Runtime should be a Kernel Runtime
 * Whether the Runtime will expose any I/O devices from the host machine - say "no" for now; we will cover I/O configuration in another document
 
-After the initial configuration, subsequent executions of the command `oneosd` will start the OneOS Runtime right away, skipping the interactive configuration. The configuration file is saved in the `$HOME/.oneos` directory. If you want to start the Runtime with a different ID (with all other settings unchanged), you can optionally provide an argument like this: `oneosd my-runtime-B`
+After the initial configuration, subsequent executions of the command `oneosd` will start the OneOS Runtime right away, skipping the interactive configuration. The configuration file is saved in the `$HOME/.oneos` directory. If you want to start the Runtime with a different ID (with all other settings unchanged), you can optionally provide an argument like this:
+
+```
+oneosd my-runtime-B
+```
 
 
 ### Usage
