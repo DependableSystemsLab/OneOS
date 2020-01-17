@@ -1,9 +1,13 @@
 {
   "name": "oneos",
-  "version": "0.0.1",
+  "version": "20.01.0",
   "description": "Overlay Network Operating System",
   "main": "lib/oneos.js",
-  "files": [],
+  "files": [
+    "bin/fixtures/*",
+    "bin/scripts/*",
+    "lib/*"
+  ],
   "scripts": {
     "test": "mocha test/run-all.js --exit",
     "test-script": "node test/run-script.js",
@@ -12,7 +16,7 @@
     "web-dev": "node node_modules/.bin/webpack-dev-server --config webpack.dev.js",
     "reset-fs": "node bin/scripts/reset-fs-mongodb.js",
     "compile": "require-self",
-    "prepublish": "echo Publishing Now && npm run compile"
+    "prepare": "npm run compile"
   },
   "bin": {
     "oneos": "bin/oneos",
