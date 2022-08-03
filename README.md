@@ -14,10 +14,11 @@ Here are some of the publications and other materials that discuss OneOS in more
 There are 2 ways to get started with OneOS. You can either:
 
 1. [Get the pre-built Docker image](#oneos-docker-image) and check out the sample OneOS grid configured in a `docker-compose.yml` file.
-2. [Manually Install](#installation) [from NPM](#install-from-npm) or [from this repository](#install-from-github), and follow the [next steps](#configuration) for configuring and running a OneOS grid.
+2. [From this repository](#install-from-github), and follow the [next steps](#configuration) for configuring and running a OneOS grid.
 
 ---
 
+## Method 1
 ### OneOS Docker Image
 
 If you use Docker (+ Docker-compose), the easiest way to get OneOS and run a test grid is to download this [`docker-compose.yml`](docker/docker-compose.yml) file, and then to use `docker-compose up` to launch the containers:
@@ -38,32 +39,12 @@ Once the network is running, you can open the OneOS Web Desktop at `//localhost:
 
 ---
 
-### Installation
-
-If you choose to install OneOS yourself, there are 2 places to get the code:
-
-1. [From NPM](#install-from-npm): `npm install -g oneos`
-2. [From Github](#install-from-github): `git clone` then `npm install -g`
-
-
-#### Dependencies
-
-* **MongoDB** - OneOS currently uses MongoDB as the storage backend. If you want to [install OneOS through NPM](#install-from-npm) or [by downloading this repository](#install-from-github), you will need to have access to a MongoDB server. (If you want to [get the OneOS Docker image](#oneos-docker-image), MongoDB is included in it and you don't need to install it separately.)
-
----
-
-#### Install from NPM
-
-If you use NodeJS, then you can install OneOS via NPM:
-
-```
-~$ npm install -g oneos
-```
 
 **Known issues during installation**
 
 > Depending on the system or Node.js installation, some of the following may occur during installation:
->
+
+> * On direct global installation using `npm i -g` the package breaks due to dependency issues. 
 > * Installation goes into an infinite loop, printing messages like `user "nobody" does not have permission to access the dev dir`.
 >    * *Potential fixes:* run the command with `sudo` - `sudo npm install -g --no-optional oneos`.
 > * Some error/warning messages like `SKIPPING OPTIONAL DEPENDENCY` are printed, but the installation finishes anyway.
@@ -84,16 +65,18 @@ After this, follow the next steps to [configure the OneOS Runtimes](#configurati
 
 ---
 
-#### Install from Github
+## Method 2
+### Install from Github
 
 If you want to just download this repository and install it, then you can enter the following:
 
 ```
 ~$ git clone https://github.com/DependableSystemsLab/OneOS
 ~$ cd OneOS
+~/OneOS$ npm install
 ~/OneOS$ npm install -g
 ```
-
+We run `npm install` and then `npm install -g` as on direct global installation the package breaks due to some dependency issue. 
 As mentioned above, you will need to have access to a MongoDB service for OneOS to run properly (you will not see a file system otherwise).
 
 When you have access to a MongoDB service (we will assume the service is at `mongodb://localhost:27017` here), first initialize the OneOS file system by entering the following command:
