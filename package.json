@@ -16,8 +16,7 @@
     "web-dev": "node node_modules/.bin/webpack-dev-server --config webpack.dev.js",
     "reset-fs": "node bin/scripts/reset-fs-mongodb.js",
     "compile": "require-self",
-    "prepare": "npm run compile",
-    "preinstall": "npm install --package-lock-only --ignore-scripts && npx npm-force-resolutions"
+    "prepare": "npm run compile"
   },
   "resolutions": {
     "graceful-fs": "4.2.2",
