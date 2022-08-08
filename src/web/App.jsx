@@ -13,7 +13,7 @@ import Base from './pages/Base.jsx';
 import Home from './pages/Home.jsx';
 import SystemMonitor from './pages/SystemMonitor.jsx';
 import FileSystem from './pages/FileSystem.jsx';
-import Applications from './pages/Applications.jsx';
+import ApplicationBuilder from './pages/ApplicationBuilder';
 
 const wss_url = 'ws://'+window.location.hostname+':'+window.location.port+'/pubsub';
 
@@ -37,6 +37,7 @@ class App extends Component{
 	                                    <Route path='/' exact component={Home}/>
 	                                    <Route path='/monitor' component={SystemMonitor}/>
 	                                    <Route path='/fs/:cwd(.*)' component={FileSystem}/>
+										<Route path="/application-builder" component={ApplicationBuilder}/>
 	                                    <Route render={(props)=>(
 	                                        <Message>
 	                                            <Message.Header>Page Not Found :(</Message.Header>

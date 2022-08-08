@@ -178,6 +178,10 @@ class Base extends React.Component {
 		              <Icon name='folder open' />
 		              File System
 		            </Menu.Item>
+					<Menu.Item as='a' onClick={(e)=>this.props.history.push('/application-builder')}>
+		              <Icon name='folder open' />
+		              Application Builder
+		            </Menu.Item>
 		            {/*<Menu.Item as='a' onClick={(e)=>this.props.history.push('/apps/')}>
 		              <Icon name='th' />
 		              Applications
