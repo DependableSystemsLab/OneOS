@@ -2,6 +2,6 @@
 *.log
 /src/papers/*
 /dev
-/semantic.json
 /semantic/*
 /webpack.dev.js
+.env
