@@ -1,7 +1,8 @@
 import React from 'react';
 import { Button } from 'semantic-ui-react';
 
-export default () => {
+
+export default ({nodes, edges}) => {
   const onDragStart = (event, nodeType) => {
     event.dataTransfer.setData('application/reactflow', nodeType);
     event.dataTransfer.effectAllowed = 'move';
@@ -19,7 +20,7 @@ export default () => {
       <div className="dndnode output" onDragStart={(event) => onDragStart(event, 'output')} draggable>
         Output Node
       </div>
-      <Button color='green'>Save</Button>
+      <Button color='green' onClick={console.log(nodes, edges)}>Save</Button>
     </div>
   );
 };

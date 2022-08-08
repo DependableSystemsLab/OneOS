@@ -29,6 +29,7 @@ const ApplicationBuilder = () => {
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [reactFlowInstance, setReactFlowInstance] = useState(null);
 
+
     const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
 
     const onDragOver = useCallback((event) => {
@@ -90,7 +91,7 @@ const ApplicationBuilder = () => {
                 </ReactFlowProvider>
             </div>
             <div style={{ flex: 1, borderLeft: "1px solid #ccc" }}>
-                <Sidebar />
+                <Sidebar nodes={nodes} edges={edges}/>
             </div>
         </div>
     );
