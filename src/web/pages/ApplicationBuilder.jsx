@@ -6,6 +6,9 @@ import ReactFlow, {
     useEdgesState,
     Controls,
 } from 'react-flow-renderer';
+import { Button } from 'semantic-ui-react';
+import OneOSService from '../services/OneOSService.jsx';
+import Swal from 'sweetalert2'
 
 import Sidebar from '../components/Sidebar';
 
@@ -24,15 +27,31 @@ const initialNodes = [
 let id = 0;
 const getId = () => `dndnode_${id++}`;
 
-const ApplicationBuilder = () => {
+const ApplicationBuilder = ({sys}) => {
     const reactFlowWrapper = useRef(null);
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [reactFlowInstance, setReactFlowInstance] = useState(null);
+    const [graphName, setGraphName] = useState('');
 
     const [nodeName, setNodeName] = useState("");
     const [nodeBg, setNodeBg] = useState('#eee');
     const [selectedNode, setSelectNode] = useState(null);
+
+    function saveFile() {
+        Swal.fire(
+            'Filed saved!',
+            `Please go to the file system tab to view the file: ${graphName}`,
+            'success'
+        )
+        sys.writeFileSystem("/", {
+            type: 'file',
+            name: graphName,
+            content: JSON.stringify({ nodes, edges }, null, "\t")
+        }).then((result) => {
+            console.log(result);
+        })
+    }
 
     function onNodesSelected(node) {
         if (node) {
@@ -145,7 +164,7 @@ const ApplicationBuilder = () => {
                 </ReactFlowProvider>
             </div>
             <div style={{ flex: 1, borderLeft: "1px solid #ccc" }}>
-                <Sidebar nodes={nodes} edges={edges} />
+                <Sidebar nodes={nodes} edges={edges} graphName={graphName} />
                 <form class="ui form updatenode_controls" style={{ display: selectedNode ? "block" : "none" }}>
                     <h2>Customize the selected node</h2>
 
@@ -158,9 +177,24 @@ const ApplicationBuilder = () => {
                         <input value={nodeBg} onChange={(evt) => changeBgColor(evt.target.value)} />
                     </div>
                 </form>
+                <form class="ui form updatenode_controls" style={{ display: nodes ? "block" : "none" }}>
+                    <h2>Save your graph to a file</h2>
+                    <div class="field">
+                        <label>Name</label>
+                        <input placeholder='your_application' value={graphName} onChange={(evt) => setGraphName(evt.target.value)} />
+                    </div>
+                    <Button color='green' onClick={() => saveFile()}>Save</Button>
+                </form>
             </div>
         </div>
     );
 };
 
-export default ApplicationBuilder;
+
+export default (props) => (
+    <OneOSService.Consumer>
+        {
+            (sys) => (<ApplicationBuilder {...props} sys={sys} />)
+        }
+    </OneOSService.Consumer>
+)
