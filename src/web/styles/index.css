@@ -33,6 +33,13 @@
   .dndflow .selectall {
     margin-top: 10px;
   }
+  .updatenode_controls{
+    padding: 10px;
+    margin: 10px;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+  }
   
   @media screen and (min-width: 768px) {
     .dndflow {

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import ReactFlow, {
     ReactFlowProvider,
     addEdge,
@@ -17,6 +17,7 @@ const initialNodes = [
         type: 'input',
         data: { label: 'input node' },
         position: { x: 250, y: 5 },
+        style: { backgroundColor: "#eee" },
     },
 ];
 
@@ -29,6 +30,56 @@ const ApplicationBuilder = () => {
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [reactFlowInstance, setReactFlowInstance] = useState(null);
 
+    const [nodeName, setNodeName] = useState("");
+    const [nodeBg, setNodeBg] = useState('#eee');
+    const [selectedNode, setSelectNode] = useState(null);
+
+    function onNodesSelected(node) {
+        if (node) {
+            setNodeName(node.data.label);
+            setNodeBg(node.style.backgroundColor);
+            setSelectNode(node);
+        }
+    }
+
+    function changeNodeName(name) {
+        if (selectedNode) {
+            setNodeName(name);
+        }
+    }
+
+    function changeBgColor(color) {
+        if (selectedNode) {
+            setNodeBg(color);
+        }
+    }
+
+    useEffect(() => {
+        setNodes((nds) =>
+            nds.map((node) => {
+                if (selectedNode != null && node.id === selectedNode.id) {
+                    node.data = {
+                        ...node.data,
+                        label: nodeName,
+                    };
+                }
+
+                return node;
+            })
+        );
+    }, [nodeName, setNodes]);
+
+    useEffect(() => {
+        setNodes((nds) =>
+            nds.map((node) => {
+                if (selectedNode != null && node.id === selectedNode.id) {
+                    node.style = { ...node.style, backgroundColor: nodeBg };
+                }
+
+                return node;
+            })
+        );
+    }, [nodeBg, setNodes]);
 
     const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
 
@@ -57,9 +108,11 @@ const ApplicationBuilder = () => {
                 type,
                 position,
                 data: { label: `${type} node` },
+                style: { backgroundColor: nodeBg },
             };
 
             setNodes((nds) => nds.concat(newNode));
+
         },
         [reactFlowInstance]
     );
@@ -80,6 +133,7 @@ const ApplicationBuilder = () => {
                             onNodesChange={onNodesChange}
                             onEdgesChange={onEdgesChange}
                             onConnect={onConnect}
+                            onSelectionChange={({ nodes }) => onNodesSelected(nodes[0])}
                             onInit={setReactFlowInstance}
                             onDrop={onDrop}
                             onDragOver={onDragOver}
@@ -91,7 +145,19 @@ const ApplicationBuilder = () => {
                 </ReactFlowProvider>
             </div>
             <div style={{ flex: 1, borderLeft: "1px solid #ccc" }}>
-                <Sidebar nodes={nodes} edges={edges}/>
+                <Sidebar nodes={nodes} edges={edges} />
+                <form class="ui form updatenode_controls" style={{ display: selectedNode ? "block" : "none" }}>
+                    <h2>Customize the selected node</h2>
+
+                    <div class="field">
+                        <label>Label</label>
+                        <input value={nodeName} onChange={(evt) => changeNodeName(evt.target.value)} />
+                    </div>
+                    <div class="field">
+                        <label className="updatenode_bglabel">Background</label>
+                        <input value={nodeBg} onChange={(evt) => changeBgColor(evt.target.value)} />
+                    </div>
+                </form>
             </div>
         </div>
     );
