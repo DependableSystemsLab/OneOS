@@ -30,7 +30,8 @@ const FILESYSTEM_FIXTURE = {
 	'data': {
 
 	},
-	'user': {}
+	'user': {},
+	'applications': {},
 }
 
 module.exports = FILESYSTEM_FIXTURE;

@@ -55,7 +55,7 @@ const ApplicationBuilder = ({ sys }) => {
                 `Please go to the file system tab to view the file: ${graphName}`,
                 'success'
             )
-            sys.writeFileSystem("/", {
+            sys.writeFileSystem("/applications", {
                 type: 'file',
                 name: graphName,
                 content: JSON.stringify({ nodes, edges }, null, "\t")
