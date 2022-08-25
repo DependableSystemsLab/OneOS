@@ -13,6 +13,7 @@ import Swal from 'sweetalert2'
 import Sidebar from '../components/Sidebar';
 
 import '../styles/index.css';
+import { transform } from '../utils/transform.jsx';
 
 const initialNodes = [
     {
@@ -59,7 +60,8 @@ const ApplicationBuilder = ({ sys }) => {
                 name: graphName,
                 content: JSON.stringify({ nodes, edges }, null, "\t")
             }).then((result) => {
-                console.log(result);
+                // console.log(result);
+                transform(graphName, nodes, edges);
             })
         }
 
