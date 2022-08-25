@@ -39,7 +39,7 @@ const ApplicationBuilder = ({ sys }) => {
     const [nodeBg, setNodeBg] = useState('#eee');
     const [selectedNode, setSelectNode] = useState(null);
 
-    function saveFile() {
+    async function saveFile() {
 
         if (graphName === '') {
 
@@ -55,13 +55,14 @@ const ApplicationBuilder = ({ sys }) => {
                 `Please go to the file system tab to view the file: ${graphName}`,
                 'success'
             )
+
+            const graph =  await transform(graphName, nodes, edges);
             sys.writeFileSystem("/applications", {
                 type: 'file',
                 name: graphName,
-                content: JSON.stringify({ nodes, edges }, null, "\t")
+                content: JSON.stringify( graph, null, "\t")
             }).then((result) => {
                 // console.log(result);
-                transform(graphName, nodes, edges);
             })
         }
 

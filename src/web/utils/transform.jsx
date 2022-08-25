@@ -24,6 +24,7 @@ export const transform = async (name, nodes, edges) =>{
 
     if(allNodes.length > 0){
         var graph = new Graph(name, allNodes, allEdges);
-        console.log(graph);
     }
+
+    return graph;
 }
