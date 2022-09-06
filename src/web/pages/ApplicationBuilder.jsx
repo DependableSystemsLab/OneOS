@@ -14,6 +14,8 @@ import Sidebar from '../components/Sidebar';
 
 import '../styles/index.css';
 import { transform } from '../utils/transform.jsx';
+import {parse} from '../utils/interpreter.jsx';
+
 
 const initialNodes = [
     {
@@ -37,6 +39,8 @@ const ApplicationBuilder = ({ sys }) => {
 
     const [nodeName, setNodeName] = useState("");
     const [nodeBg, setNodeBg] = useState('#eee');
+    const [nodePath, setNodePath] =useState("");
+
     const [selectedNode, setSelectNode] = useState(null);
 
     async function saveFile() {
@@ -57,10 +61,11 @@ const ApplicationBuilder = ({ sys }) => {
             )
 
             const graph =  await transform(graphName, nodes, edges);
+            const osh = await parse(graph);
             sys.writeFileSystem("/applications", {
                 type: 'file',
-                name: graphName,
-                content: JSON.stringify( graph, null, "\t")
+                name: graphName+".osh",
+                content: osh
             }).then((result) => {
                 // console.log(result);
             })
@@ -70,6 +75,11 @@ const ApplicationBuilder = ({ sys }) => {
             if (node) {
                 setNodeName(node.data.label);
                 setNodeBg(node.style.backgroundColor);
+                if(node.data.script != undefined){
+                    setNodePath(node.data.script);
+                }else{
+                    setNodePath("");
+                }
                 setSelectNode(node);
             }
         }
@@ -83,6 +93,12 @@ const ApplicationBuilder = ({ sys }) => {
         function changeBgColor(color) {
             if (selectedNode) {
                 setNodeBg(color);
+            }
+        }
+        
+        function changeNodePath(path){
+            if(selectedNode){
+                setNodePath(path);
             }
         }
 
@@ -188,6 +204,10 @@ const ApplicationBuilder = ({ sys }) => {
                         <div class="field">
                             <label className="updatenode_bglabel">Background</label>
                             <input value={nodeBg} onChange={(evt) => changeBgColor(evt.target.value)} />
+                        </div>
+                        <div class="field">
+                            <label className="updatenode_bglabel">File Path</label>
+                            <input value={nodePath} onChange={(evt) => changeNodePath(evt.target.value)} />
                         </div>
                     </form>
                     <form class="ui form updatenode_controls" style={{ display: nodes ? "block" : "none" }}>

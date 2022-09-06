@@ -2,7 +2,7 @@ function Node(node) {
   this.name = node.data.label;
   this.agent = null;
   this.group = null;
-  this.script = null;
+  this.script = node.data.script;
   this.in_edges = [];
   this.out_edges = [];
   this.pid = node.id;
