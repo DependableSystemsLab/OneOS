@@ -37,10 +37,10 @@ class Node {
 
     if (this.type == 'input') {
       Node.inputCount += 1;
-      return `in:${Node.inputCount}`;
+      return `input${Node.inputCount}`;
     } else if (this.type == 'output') {
       Node.outputCount += 1;
-      return `out:${Node.outputCount}`;
+      return `output${Node.outputCount}`;
     } else {
       return this.id;
     }
@@ -64,11 +64,7 @@ class Edge {
   }
 
   generateDeclaration() {
-    if (this.startNode.type == 'input' || this.endNode.type == 'output') {
-      return `${this.startNode.name} -> ${this.endNode.name}`;
-    } else  {
-      return `edge ${this.id} = ${this.startNode.name} -> ${this.endNode.name}`;
-    }
+    return `edge ${this.id} = ${this.startNode.name} -> ${this.endNode.name}`;
   }
 }
 
@@ -87,23 +83,25 @@ function generateEdges(nodes, edges) {
   return edges.map((edge) => new Edge(nodeMap[edge.sender], nodeMap[edge.receiver]));
 }
 
-export const parse =  (data) => {
+export const parse = (data) => {
   const nodes = generateNodes(data.nodes);
   const edges = generateEdges(nodes, data.edges);
   let outScript = '';
-
-  // Append the graph name
+  let inputCount = -1;
+  let outputCount = -1;
 
   outScript += `graph ${data['name']} {
-        ${
-  nodes.filter((node) => node.type == 'default').map((node) => node.generateDeclaration()).join('\n\t')
-}
-        ${
-  edges.map((edge) => edge.generateDeclaration()).join('\n\t')
-}
-}`;
-
+    ${nodes.map((node) => node.generateDeclaration()).join('\n\t')}
+    
+    ${nodes.filter((node)=> node.type === 'input').map((node)=>{
+        inputCount++;
+        return `in:${inputCount} -> ${node.name}`
+    }).join('\n\t')}
+    ${edges.map((edge) => edge.generateDeclaration()).join('\n\t')}
+    ${nodes.filter((node)=> node.type === 'output').map((node)=>{
+      outputCount++;
+      return `${node.name} -> out:${outputCount}`
+  }).join('\n\t')}
+}`
   return outScript;
 }
-
-

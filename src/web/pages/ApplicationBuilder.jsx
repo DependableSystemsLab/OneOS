@@ -121,6 +121,21 @@ const ApplicationBuilder = ({ sys }) => {
             setNodes((nds) =>
                 nds.map((node) => {
                     if (selectedNode != null && node.id === selectedNode.id) {
+                        node.data = {
+                            ...node.data,
+                            script: nodePath,
+                        };
+                    }
+
+                    return node;
+                })
+            );
+        }, [nodePath, setNodes]);
+
+        useEffect(() => {
+            setNodes((nds) =>
+                nds.map((node) => {
+                    if (selectedNode != null && node.id === selectedNode.id) {
                         node.style = { ...node.style, backgroundColor: nodeBg };
                     }
 
