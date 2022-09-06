@@ -58,6 +58,7 @@
     "mosca": "^2.8.3",
     "mqtt": "^2.18.9",
     "node-ipc": "^9.2.1",
+    "path": "^0.12.7",
     "pidusage": "^3.0.0",
     "react-flow-renderer": "^10.3.14",
     "redis": "^4.2.0",
