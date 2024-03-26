@@ -1,7 +1,0 @@
-let writer = /code/basic/writer.js alarms.log
-let observer = /code/basic/observer.js /dev/video0
-let detector = /code/basic/detector.js
-let notifier = /code/basic/notifier.js "jungkumseok@gmail.com"
-pipe ($observer + ":video") ($detector + ":mpeg")
-pipe ($detector + ":alarm") ($writer + ":stdin")
-pipe ($detector + ":alarm") ($notifier + ":alarm")
