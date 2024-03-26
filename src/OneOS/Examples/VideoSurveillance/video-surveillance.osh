@@ -1,0 +1,26 @@
+﻿graph VideoSurveillance (inputDevice, saveFilePath, clientEmail) {
+  init {
+    print("Starting Video Surveillance");
+  }
+
+  node streamer: process("node", "streamer.js " + inputDevice);
+  node detector: process("node", "detector.js");
+  node recorder: process("node", "recorder.js " + saveFilePath);
+  node viewer: process("node", "viewer.js");
+  node notifier: process("node", "notifier.js " + clientEmail);
+
+  edge e1: streamer -> detector;
+  edge e2: streamer -> recorder;
+  edge e3: streamer -> viewer;
+  edge e4: detector -> notifier;
+};
+
+policy BasicPolicy () for VideoSurveillance {
+    place (#camera || #webcam) streamer;
+
+    always () detector;
+
+    min_rate (2.5) e1, e2, e3;
+};
+
+spawn VideoSurveillance("/dev/z4-01.jungabyte.com/vid0", "recorded", "jungkumseok@gmail.com") with BasicPolicy();

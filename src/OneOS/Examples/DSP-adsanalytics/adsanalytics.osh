@@ -1,0 +1,27 @@
+graph DSP_adsanalytics (inputFile, outputFile) {
+  init {
+    print("Starting DSPBench - adsanalytics");
+  }
+
+  node spout_c: process("node", "AdEventParser.js " + inputFile + " clicks", { "outputFormat": "json" });
+  node spout_i: process("node", "AdEventParser.js " + inputFile + " impressions", { "outputFormat": "json" });
+  node ctr: process("node", "RollingCtr.js", { "inputFormat": "json" });
+  node sink: process("node", "/home/root/writer.js " + outputFile);
+
+  //node spout: process("node", "combined.js " + inputFile);
+  //node sink: process("node", "/home/root/writer.js " + outputFile);
+
+  edge a: spout_c -> ctr;
+  edge b: spout_i -> ctr;
+  edge c: ctr -> sink;
+
+  //edge e1: spout -> sink;
+};
+
+policy BasicPolicy () for DSP_adsanalytics {
+    
+};
+
+// test_spawn(DSP_adsanalytics("ad-clicks.dat", "adsanalytics.out"), BasicPolicy());
+
+spawn DSP_adsanalytics("ad-clicks.dat", "adsanalytics.out") with BasicPolicy();

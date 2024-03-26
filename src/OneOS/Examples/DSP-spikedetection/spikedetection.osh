@@ -1,0 +1,27 @@
+graph DSP_spikedetection (inputFile, outputFile) {
+  init {
+    print("Starting DSPBench - spikedetection");
+  }
+
+  node spout: process("node", "SensorParser.js " + inputFile);
+  node average: process("node", "MovingAverage.js");
+  node detector: process("node", "SpikeDetector.js");
+  node sink: process("node", "/home/root/writer.js " + outputFile);
+
+  //node spout: process("node", "combined.js " + inputFile);
+  //node sink: process("node", "/home/root/writer.js " + outputFile);
+
+  edge e1: spout -> average;
+  edge e2: average -> detector;
+  edge e3: detector -> sink;
+
+  //edge e1: spout -> sink;
+};
+
+policy BasicPolicy () for DSP_spikedetection {
+    
+};
+
+// test_spawn(DSP_spikedetection("sensors.dat", "spikedetection.out"), BasicPolicy());
+
+spawn DSP_spikedetection("sensors.dat", "spikedetection.out") with BasicPolicy();

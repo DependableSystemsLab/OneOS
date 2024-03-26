@@ -1,0 +1,25 @@
+graph DSP_wordcount (inputFile, outputFile) {
+  init {
+    print("Starting DSPBench - wordcount");
+  }
+
+  node split: process("node", "SplitSentence.js " + inputFile);
+  node count: process("node", "WordCount.js");
+  node sink: process("node", "/home/root/writer.js " + outputFile);
+
+  //node split: process("node", "combined.js " + inputFile);
+  //node sink: process("node", "/home/root/writer.js " + outputFile);
+
+  edge e1: split -> count;
+  edge e2: count -> sink;
+
+  //edge e1: split -> sink;
+};
+
+policy BasicPolicy () for DSP_wordcount {
+    
+};
+
+// test_spawn(DSP_wordcount("books.dat", "wordcount.out"), BasicPolicy());
+
+spawn DSP_wordcount("books.dat", "wordcount.out") with BasicPolicy();

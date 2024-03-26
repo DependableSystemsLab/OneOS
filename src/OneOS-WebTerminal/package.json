@@ -1,0 +1,19 @@
+{
+  "name": "oneos-webterminal",
+  "version": "0.0.0",
+  "description": "OneOS-WebTerminal",
+  "main": "server.js",
+  "author": {
+    "name": ""
+  },
+  "devDependencies": {
+    "eslint": "^8.21.0"
+  },
+  "eslintConfig": {},
+  "dependencies": {
+    "cookie-parser": "^1.4.6",
+    "express": "^4.18.2",
+    "nodemailer": "^6.9.3",
+    "ws": "^8.13.0"
+  }
+}

@@ -1,0 +1,34 @@
+// requires npm package 'mmdb-lib' for reading the MaxMind GeoIP database
+graph DSP_clickanalytics (inputFile, geoipDB, visitSinkFile, locationSinkFile) {
+  init {
+    print("Starting DSPBench - clickanalytics");
+  }
+
+  node spout: process("node", "ClickStreamParser.js " + inputFile);
+  node repeat: process("node", "RepeatVisit.js");
+  node geo: process("node", "Geography.js " + geoipDB);
+  node visits: process("node", "VisitStats.js");
+  node geoStat: process("node", "GeoStats.js");
+  node vSink: process("node", "/home/root/writer.js " + visitSinkFile);
+  node lSink: process("node", "/home/root/writer.js " + locationSinkFile);
+
+  //node spout: process("node", "combined.js " + inputFile);
+  //node sink: process("node", "/home/root/writer.js " + outputFile);
+
+  edge a1: spout -> repeat;
+  edge a2: repeat -> visits;
+  edge a3: visits -> vSink;
+  edge b1: spout -> geo;
+  edge b2: geo -> geoStat;
+  edge b3: geoStat -> lSink;
+
+  //edge e1: spout -> sink;
+};
+
+policy BasicPolicy () for DSP_clickanalytics {
+    
+};
+
+// test_spawn(DSP_clickanalytics("click-stream.json", "GeoLite2-City.mmdb", "visits.out", "locations.out"), BasicPolicy());
+
+spawn DSP_clickanalytics("click-stream.json", "GeoLite2-City.mmdb", "visits.out", "locations.out") with BasicPolicy();

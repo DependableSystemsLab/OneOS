@@ -1,0 +1,23 @@
+// requires npm package 'gdal-async' for reading the shapefile map data
+graph DSP_trafficmonitoring (inputFile, mapData, outputFile) {
+  init {
+    print("Starting DSPBench - trafficmonitoring");
+  }
+
+  node spout: process("node", "BeijingTaxiTraceParser.js " + inputFile);
+  node matching: process("node", "MapMatching.js " + mapData);
+  node calculate: process("node", "SpeedCalculator.js");
+  node sink: process("node", "/home/root/writer.js " + outputFile);
+
+  edge e1: spout -> matching;
+  edge e2: matching -> calculate;
+  edge e3: calculate -> sink;
+};
+
+policy BasicPolicy () for DSP_trafficmonitoring {
+    
+};
+
+// test_spawn(DSP_trafficmonitoring("taxi-traces.csv", "beijing/roads.shp", "trafficmonitoring.out"), BasicPolicy());
+
+spawn DSP_trafficmonitoring("taxi-traces.csv", "beijing/roads.shp", "trafficmonitoring.out") with BasicPolicy();

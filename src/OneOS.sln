@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33530.505
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneOS", "OneOS\OneOS.csproj", "{C98AF9E4-0CD8-44C7-B817-01D3F7FBEE59}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CEE4A1FC-D1E9-42FF-A073-DF152F9DCCB7} = {CEE4A1FC-D1E9-42FF-A073-DF152F9DCCB7}
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneOS-Core", "OneOS-Core\OneOS-Core.csproj", "{942E6827-0847-4A16-925F-B81B5317C66C}"
+EndProject
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "OneOS-WebTerminal", "OneOS-WebTerminal\OneOS-WebTerminal.njsproj", "{CEE4A1FC-D1E9-42FF-A073-DF152F9DCCB7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C98AF9E4-0CD8-44C7-B817-01D3F7FBEE59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C98AF9E4-0CD8-44C7-B817-01D3F7FBEE59}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C98AF9E4-0CD8-44C7-B817-01D3F7FBEE59}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C98AF9E4-0CD8-44C7-B817-01D3F7FBEE59}.Release|Any CPU.Build.0 = Release|Any CPU
+		{942E6827-0847-4A16-925F-B81B5317C66C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{942E6827-0847-4A16-925F-B81B5317C66C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{942E6827-0847-4A16-925F-B81B5317C66C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{942E6827-0847-4A16-925F-B81B5317C66C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CEE4A1FC-D1E9-42FF-A073-DF152F9DCCB7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CEE4A1FC-D1E9-42FF-A073-DF152F9DCCB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CEE4A1FC-D1E9-42FF-A073-DF152F9DCCB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CEE4A1FC-D1E9-42FF-A073-DF152F9DCCB7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {60C8D1C3-C1C6-4497-A58A-C2A580D07D5E}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,38 @@
+graph RIoT_stats (inputFile, bloomFilterPath, annotationData, outputFile) {
+  init {
+    print("Starting RIoTBench - stats");
+  }
+
+  node parse: process("node", "SenMLParse.js " + inputFile);
+  node average: process("node", "Average.js", { "outputFormat": "json" });
+  node kalman: process("node", "KalmanFilter.js");
+  node slide: process("node", "LinearRegression.js", { "outputFormat": "json" });
+  node count: process("node", "DistinctCount.js", { "outputFormat": "json" });
+  node viz: process("node", "GroupViz.js", { "inputFormat": "json" });
+  node upload: process("node", "BlobUpload.js");
+  node sink: process("node", "/home/root/writer.js " + outputFile);
+
+  //node split: process("node", "combined.js " + inputFile);
+  //node sink: process("node", "/home/root/writer.js " + outputFile);
+
+  edge a1: parse -> average;
+  edge b1: parse -> kalman;
+  edge b2: kalman -> slide;
+  edge c1: parse -> count;
+  edge a2: average -> viz;
+  edge b3: slide -> viz;
+  edge c2: count -> viz;
+  edge e1: viz -> upload;
+  edge e2: upload -> sink;
+
+  //edge e1: split -> sink;
+  //edge test1: slide -> sink;
+};
+
+policy BasicPolicy () for RIoT_stats {
+    
+};
+
+// test_spawn(RIoT_stats("TAXI_sample_data_senml.csv", "bloomfilter-TAXI.model", "taxi-metadata-fulldataset.txt", "riot-stats.out"), BasicPolicy());
+
+spawn RIoT_stats("TAXI_sample_data_senml.csv", "bloomfilter-TAXI.model", "taxi-metadata-fulldataset.txt", "riot-stats.out") with BasicPolicy();

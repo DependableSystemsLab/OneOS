@@ -1,0 +1,39 @@
+// requires npm package 'ml-regression-multivariate-linear' for using a regression model
+// requires npm package 'decision-tree' for using a decision tree
+
+graph RIoT_pred (inputFile, regressionModelPath, decisionTreePath, mqttServer, outputFile) {
+  init {
+    print("Starting RIoTBench - pred");
+  }
+
+  node parse: process("node", "SenMLFlatParse.js " + inputFile);
+  node dtree: process("node", "DecisionTreePred.js " + decisionTreePath, { "outputFormat": "json" });
+  node regression: process("node", "MultivariateLinearRegressionPred.js " + regressionModelPath, { "outputFormat": "json" });
+  node average: process("node", "AverageFlat.js", { "outputFormat": "json" });
+  node estimate: process("node", "ErrorEstimate.js", "json");
+  node mqtt: process("node", "MqttPublish.js " + mqttServer, { "inputFormat": "json" });
+  node sink: process("node", "/home/root/writer.js " + outputFile);
+
+  //node split: process("node", "combined.js " + inputFile);
+  //node sink: process("node", "/home/root/writer.js " + outputFile);
+
+  edge a1: parse -> dtree;
+  edge b1: parse -> regression;
+  edge c1: parse -> average;
+  edge b2: regression -> estimate;
+  edge c2: average -> estimate;
+  edge a2: dtree -> mqtt;
+  edge b3: estimate -> mqtt;
+  edge e1: mqtt -> sink;
+
+  //edge e1: split -> sink;
+  //edge test1: estimate -> sink;
+};
+
+policy BasicPolicy () for RIoT_pred {
+    
+};
+
+// test_spawn(RIoT_pred("TAXI_sample_data_senml.csv", "/home/root/riot/train/TAXI.regression.model", "/home/root/riot/train/TAXI.decisionTree.model", "192.168.0.20:1883", "riot-pred.out"), BasicPolicy());
+
+spawn RIoT_pred("TAXI_sample_data_senml.csv", "/home/root/riot/train/TAXI.regression.model", "/home/root/riot/train/TAXI.decisionTree.model", "192.168.0.20:1883", "riot-pred.out") with BasicPolicy();

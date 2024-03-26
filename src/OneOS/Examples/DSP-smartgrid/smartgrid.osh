@@ -1,0 +1,34 @@
+graph DSP_smartgrid (inputFile, outFilePrefix) {
+  init {
+    print("Starting DSPBench - smartgrid");
+  }
+
+  node spout: process("node", "SmartPlugParser.js " + inputFile);
+  node window: process("node", "SmartGridSlidingWindow.js");
+  node median: process("node", "GlobalMedianCalculator.js");
+  node plugMedian: process("node", "PlugMedianCalculator.js");
+  node detector: process("node", "OutlierDetector.js");
+  node houseLoad: process("node", "HouseLoadPredictor.js");
+  node plugLoad: process("node", "PlugLoadPredictor.js");
+  node oSink: process("node", "/home/root/writer.js " + outFilePrefix + ".outlier.out");
+  node pSink: process("node", "/home/root/writer.js " + outFilePrefix + ".prediction.out");
+
+  edge a1: spout -> window;
+  edge a2a: window -> median;
+  edge a2b: window -> plugMedian;
+  edge a3a: median -> detector;
+  edge a3b: plugMedian -> detector;
+  edge b1: spout -> houseLoad;
+  edge c1: spout -> plugLoad;
+  edge a4: detector -> oSink;
+  edge b2: houseLoad -> pSink;
+  edge c2: plugLoad -> pSink;
+};
+
+policy BasicPolicy () for DSP_smartgrid {
+    
+};
+
+// test_spawn(DSP_smartgrid("smart-grid.csv", "smartgrid"), BasicPolicy());
+
+spawn DSP_smartgrid("smart-grid.csv", "smartgrid") with BasicPolicy();

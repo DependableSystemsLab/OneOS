@@ -1,0 +1,36 @@
+// requires npm package 'mmdb-lib' for reading the MaxMind GeoIP database
+graph DSP_logprocessing (inputFile, geoipDB, outFilePrefix) {
+  init {
+    print("Starting DSPBench - logprocessing");
+  }
+
+  node spout: process("node", "CommonLogParser.js " + inputFile);
+  node volume: process("node", "VolumeCount.js");
+  node status: process("node", "StatusCount.js");
+  node geo: process("node", "Geography.js " + geoipDB);
+  node geoStat: process("node", "GeoStats.js");
+  node vSink: process("node", "/home/root/writer.js " + outFilePrefix + ".volume.out");
+  node sSink: process("node", "/home/root/writer.js " + outFilePrefix + ".status.out");
+  node cSink: process("node", "/home/root/writer.js " + outFilePrefix + ".country.out");
+
+  //node spout: process("node", "combined.js " + inputFile);
+  //node sink: process("node", "/home/root/writer.js " + outputFile);
+
+  edge a1: spout -> volume;
+  edge b1: spout -> status;
+  edge c1: spout -> geo;
+  edge c2: geo -> geoStat;
+  edge a2: volume -> vSink;
+  edge b2: status -> sSink;
+  edge c3: geoStat -> cSink;
+
+  //edge e1: spout -> sink;
+};
+
+policy BasicPolicy () for DSP_logprocessing {
+    
+};
+
+// test_spawn(DSP_logprocessing("http-server.log", "GeoLite2-City.mmdb", "logprocessing"), BasicPolicy());
+
+spawn DSP_logprocessing("http-server.log", "GeoLite2-City.mmdb", "logprocessing") with BasicPolicy();

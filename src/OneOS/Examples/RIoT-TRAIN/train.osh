@@ -1,0 +1,38 @@
+// requires npm package 'mathjs' for calculating percentiles for annotation
+// requires npm package 'ml-regression-multivariate-linear' for training a regression model
+// requires npm package 'decision-tree' for training a decision tree
+
+graph RIoT_train (inputFile, regressionModelPath, decisionTreePath, mqttServer, outputFile) {
+  init {
+    print("Starting RIoTBench - train");
+  }
+
+  node parse: process("node", "TimedSenMLParseBatch.js " + inputFile);
+  node regression: process("node", "MultivariateLinearRegressionTrain.js " + regressionModelPath, { "outputFormat": "json" });
+  node annotate: process("node", "AnnotateDecisionTreeClass.js");
+  node dtree: process("node", "DecisionTreeTrain.js " + decisionTreePath, { "outputFormat": "json" });
+  node write: process("node", "BlobWrite.js", { "inputFormat": "json" });
+  node mqtt: process("node", "MqttPublish.js " + mqttServer);
+  node sink: process("node", "/home/root/writer.js " + outputFile);
+
+  //node split: process("node", "combined.js " + inputFile);
+  //node sink: process("node", "/home/root/writer.js " + outputFile);
+
+  edge a1: parse -> regression;
+  edge b1: parse -> annotate;
+  edge b2: annotate -> dtree;
+  edge a2: regression -> write;
+  edge b3: dtree -> write;
+  edge e1: write -> mqtt;
+  edge e2: mqtt -> sink;
+
+  //edge e1: split -> sink;
+  //edge test1: slide -> sink;
+};
+
+policy BasicPolicy () for RIoT_train {
+};
+
+// test_spawn(RIoT_train("TAXI_sample_data_senml.csv", "TAXI.regression.model", "TAXI.decisionTree.model", "192.168.0.20:1883", "riot-train.out"), BasicPolicy());
+
+spawn RIoT_train("TAXI_sample_data_senml.csv", "TAXI.regression.model", "TAXI.decisionTree.model", "192.168.0.20:1883", "riot-train.out") with BasicPolicy();

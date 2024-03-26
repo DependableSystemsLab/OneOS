@@ -1,0 +1,21 @@
+// requires npm package 'bloomfilter' for training and using a Bloom Filter
+graph RIoT_etl (inputFile, bloomFilterPath, annotationData, outputFile) {
+  init {
+    print("Starting RIoTBench - etl");
+  }
+
+  node parse: process("node", "SenMLParse.js " + inputFile);
+  node range: process("node", "RangeFilter.js");
+  node bloomTrain: process("node", "BloomFilterTrain.js");
+
+  edge map: parse -> range;
+  edge f1: range -> bloomTrain;
+};
+
+policy BasicPolicy () for RIoT_etl {
+    
+};
+
+// test_spawn(RIoT_etl("TAXI_sample_data_senml.csv", "bloomfilter-TAXI.model", "taxi-metadata-fulldataset.txt", "riot-etl.out"), BasicPolicy());
+
+spawn RIoT_etl("TAXI_sample_data_senml.csv", "bloomfilter-TAXI.model", "taxi-metadata-fulldataset.txt", "riot-etl.out") with BasicPolicy();

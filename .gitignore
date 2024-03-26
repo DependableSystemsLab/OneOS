@@ -1,7 +1,9 @@
 **/node_modules/**
 *.log
-/src/papers/*
-/dev
-/semantic.json
-/semantic/*
-/webpack.dev.js
+.vs
+**/bin/Debug/**
+**/bin/Release/**
+**/obj/**
+*.njsproj.user
+*.csproj.user
+*.pubxml.user

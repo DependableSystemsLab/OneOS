@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Confluent.Kafka" Version="2.1.0" />
+    <PackageReference Include="MQTTnet" Version="4.3.1.873" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="StackExchange.Redis" Version="2.6.104" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Examples\DSP-adsanalytics\" />
+    <Folder Include="Examples\DSP-clickanalytics\" />
+    <Folder Include="Examples\DSP-frauddetection\" />
+    <Folder Include="Examples\DSP-logprocessing\" />
+    <Folder Include="Examples\DSP-smartgrid\" />
+    <Folder Include="Examples\DSP-spikedetection\" />
+    <Folder Include="Examples\DSP-trafficmonitoring\" />
+    <Folder Include="Examples\DSP-wordcount\" />
+    <Folder Include="Examples\RIoT-ETL\" />
+    <Folder Include="Examples\RIoT-PRED\" />
+    <Folder Include="Examples\RIoT-STATS\" />
+    <Folder Include="Examples\RIoT-TRAIN\" />
+    <Folder Include="Examples\VideoSurveillance\" />
+    <Folder Include="Examples\YSB\" />
+  </ItemGroup>
+
+</Project>

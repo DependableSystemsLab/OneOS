@@ -1,0 +1,37 @@
+graph RIoT_etl (inputFile, bloomFilterPath, annotationData, mqttServer, outputFile) {
+  init {
+    print("Starting RIoTBench - etl");
+  }
+
+  node parse: process("node", "SenMLParse.js " + inputFile);
+  node range: process("node", "RangeFilter.js");
+  node bloom: process("node", "BloomFilter.js");
+  node interpolate: process("node", "Interpolate.js");
+  node join: process("node", "Join.js");
+  node annotate: process("node", "Annotate.js " + annotationData);
+  node convert: process("node", "CsvToSenML.js");
+  node mqtt: process("node", "MqttPublish.js " + mqttServer);
+  node sink: process("node", "/home/root/writer.js " + outputFile);
+
+  //node split: process("node", "combined.js " + inputFile);
+  //node sink: process("node", "/home/root/writer.js " + outputFile);
+
+  edge map: parse -> range;
+  edge f1: range -> bloom;
+  edge f2: bloom -> interpolate;
+  edge reduce: interpolate -> join;
+  edge c1: join -> annotate;
+  edge c2: annotate -> convert;
+  edge c3: convert -> mqtt;
+  edge c4: mqtt -> sink;
+
+  //edge e1: split -> sink;
+};
+
+policy BasicPolicy () for RIoT_etl {
+    
+};
+
+// test_spawn(RIoT_etl("TAXI_sample_data_senml.csv", "bloomfilter-TAXI.model", "taxi-metadata-fulldataset.txt", "192.168.0.20:1883", "riot-etl.out"), BasicPolicy());
+
+spawn RIoT_etl("TAXI_sample_data_senml.csv", "bloomfilter-TAXI.model", "taxi-metadata-fulldataset.txt", "192.168.0.20:1883", "riot-etl.out") with BasicPolicy();

@@ -1,0 +1,22 @@
+graph YahooStreamingBenchmark () {
+  init {
+    print("Starting Yahoo Streaming Benchmark");
+  }
+
+  node spout: process("node", "KafkaSpout.js", { "outputFormat": "json" });
+  node filter: process("node", "Filter.js", "json");
+  node join: process("node", "RedisAdCampaignCache.js", "json");
+  node campaign: process("node", "CampaignProcessor.js", { "inputFormat": "json" });
+
+  edge e1: spout -/> filter;
+  edge e2: filter -> join;
+  edge e3: join -*> campaign;
+};
+
+policy BasicPolicy () for YahooStreamingBenchmark {
+
+};
+
+// test_spawn(YahooStreamingBenchmark(3), BasicPolicy());
+
+spawn YahooStreamingBenchmark(3) with BasicPolicy();

@@ -1,0 +1,25 @@
+graph DSP_frauddetection (inputFile, markovModel, outputFile) {
+  init {
+    print("Starting DSPBench - frauddetection");
+  }
+
+  node spout: process("node", "TransactionParser.js " + inputFile);
+  node predict: process("node", "FraudPredictor.js " + markovModel);
+  node sink: process("node", "/home/root/writer.js " + outputFile);
+
+  //node spout: process("node", "combined.js " + inputFile);
+  //node sink: process("node", "/home/root/writer.js " + outputFile);
+
+  edge e1: spout -> predict;
+  edge e2: predict -> sink;
+
+  //edge e1: spout -> sink;
+};
+
+policy BasicPolicy () for DSP_frauddetection {
+    
+};
+
+// test_spawn(DSP_frauddetection("credit-card.dat", "model.txt", "frauddetection.out"), BasicPolicy());
+
+spawn DSP_frauddetection("credit-card.dat", "model.txt", "frauddetection.out") with BasicPolicy();
