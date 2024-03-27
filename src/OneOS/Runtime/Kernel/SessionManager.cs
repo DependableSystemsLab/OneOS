@@ -83,7 +83,7 @@ namespace OneOS.Runtime.Kernel
             {
                 if (!Runtime.Registry.Agents.ContainsKey(ShellUri(username)))
                 {
-                    var env = new Dictionary<string, string>();
+                    var env = new Dictionary<string, string>() { { "CHECKPOINT_INTERVAL", "0" } };
                     await Request("kernels." + Runtime.Domain + "/RegistryManager", "SpawnAs", ShellUri(username), username, "OneOSKernel", env, "UserShell", username, "interpreter");
                 }
 

@@ -7,6 +7,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using Newtonsoft.Json.Linq;
 
 using OneOS.Runtime;
 using OneOS.Common;
@@ -156,6 +157,8 @@ config
                 // if first argument is "config", run the interactive setup
                 else if (arguments[0] == "config")
                 {
+                    Helpers.PrintPlatformInformation();
+
                     Console.WriteLine($"Running OneOS Configuration Setup");
                     Configuration.CreateOrUpdateConfig(mountPath);
                 }
@@ -164,7 +167,10 @@ config
                 {
                     Helpers.PrintPlatformInformation();
 
+                    EnsureTestClusterConfigs(mountPath);
+
                     Console.WriteLine($"Starting OneOS Test Cluster");
+                    Console.WriteLine($"(this cluster runs locally -- use this only during development)");
 
                     var config_0 = Configuration.LoadConfig(Path.Combine(mountPath, "test_0"));
                     var config_1 = Configuration.LoadConfig(Path.Combine(mountPath, "test_1"));
@@ -449,6 +455,77 @@ config
                 else
                 {
                     Console.WriteLine($"Unknown command {arguments[0]}");
+                }
+            }
+        }
+
+        static void EnsureTestClusterConfigs(string mountPath)
+        {
+            if (!Directory.Exists(mountPath))
+            {
+                Console.WriteLine($"{mountPath} directory not found. Creating ...");
+                Directory.CreateDirectory(mountPath);
+            };
+
+            var cores = Configuration.LookupCores();
+
+            for (var i = 0; i < 5; i++)
+            {
+                var peerId = $"test_{i}";
+                var baseDirPath = Path.Combine(mountPath, peerId);
+                var configPath = Path.Combine(baseDirPath, "config.json");
+
+                if (!Directory.Exists(baseDirPath))
+                {
+                    Console.WriteLine($"{baseDirPath} directory not found. Creating ...");
+                    Directory.CreateDirectory(baseDirPath);
+                };
+
+                // look for config file
+                if (!File.Exists(configPath))
+                {
+                    var json = JObject.Parse("{}");
+                    json["domain"] = "default.domain";
+                    json["id"] = peerId;
+                    json["port"] = $"800{i}";
+                    json["storage"] = Path.Combine(baseDirPath, "data");
+                    json["vms"] = JArray.Parse("[]");
+                    json["io"] = JArray.Parse("[]");
+                    json["cores"] = JArray.Parse($"[ 1, {cores.Item2} ]");
+                    json["memory"] = 512;
+                    json["disk"] = 1024;
+                    json["tags"] = JArray.Parse("[]");
+                    json["peers"] = JObject.Parse("{}");
+
+                    var vmAgents = (JArray)json["vms"];
+                    foreach (var lang in Configuration.LanguageMap)
+                    {
+                        try
+                        {
+                            var bin = Configuration.LookupVM(lang.Value);
+                            var vmConfig = new JObject();
+                            vmConfig["name"] = lang.Key;
+                            vmConfig["language"] = lang.Key;
+                            vmConfig["bin"] = bin;
+                            vmAgents.Add(vmConfig);
+                        }
+                        catch (NullReferenceException ex)
+                        {
+                            // do nothing
+                        }
+                    }
+
+                    var peers = (JObject)json["peers"];
+                    for (var j = 0; j < 5; j++)
+                    {
+                        var otherId = $"test_{j}";
+                        if (peerId != otherId)
+                        {
+                            peers.Add(otherId, $"127.0.0.1:800{j}");
+                        }
+                    }
+
+                    File.WriteAllText(configPath, json.ToString());
                 }
             }
         }

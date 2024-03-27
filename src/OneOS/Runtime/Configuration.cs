@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
 using System.IO;
 using System.Net;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
-
-using OneOS.Common;
 
 namespace OneOS.Runtime
 {
@@ -21,7 +19,7 @@ namespace OneOS.Runtime
         static string OneOSPath = Path.Combine(HomePath, ".oneos");
         public static string DefaultOneOSPath { get => OneOSPath; }
 
-        static Dictionary<string, string> LanguageMap = new Dictionary<string, string>()
+        public static Dictionary<string, string> LanguageMap = new Dictionary<string, string>()
         {
             { "csharp", "dotnet" },
             { "fsharp", "dotnet" },
@@ -110,6 +108,57 @@ Peers:
             SaveConfig(configPath, json);
         }
 
+        private static void InstallNodeJSDependencies(string tempDataPath, string dependencies)
+        {
+            var tcs = new TaskCompletionSource<object>();
+
+            Console.WriteLine($"Installing oneos.js NPM Dependencies");
+
+            var startInfo = new ProcessStartInfo();
+            startInfo.UseShellExecute = false;
+            startInfo.WorkingDirectory = tempDataPath;
+            startInfo.RedirectStandardInput = true;
+            startInfo.RedirectStandardOutput = true;
+            startInfo.RedirectStandardError = true;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                startInfo.FileName = "cmd";
+                startInfo.Arguments = "/c npm install " + dependencies;
+            }
+            else
+            {
+                startInfo.FileName = "npm";
+                startInfo.Arguments = "install " + dependencies;
+            }
+
+            var npm = new Process();
+            npm.StartInfo = startInfo;
+            npm.EnableRaisingEvents = true;
+            npm.Exited += (sender, evt) =>
+            {
+                string output;
+                if (npm.ExitCode != 0)
+                {
+                    output = npm.StandardError.ReadToEnd();
+                }
+                else
+                {
+                    output = npm.StandardOutput.ReadToEnd();
+                }
+
+                tcs.SetResult(output);
+            };
+
+            npm.Start();
+
+            var result = tcs.Task.Result;
+
+            Console.WriteLine(result);
+
+            return;
+        }
+
         // ensures that the OneOS directory exists
         static void CheckOneOSDirectory(string mountPath)
         {
@@ -155,6 +204,9 @@ Peers:
             {
                 Console.WriteLine($"{npmPackageJson} file not found. Creating ...");
                 File.WriteAllText(npmPackageJson, "{}");
+
+                // install oneos.js dependencies
+                InstallNodeJSDependencies(tempDirectory, "esprima@4.0.1 escodegen@2.1.0 js-beautify@1.14.11");
             }
 
             // check node_modules (needed for JavaScript agents)
@@ -461,7 +513,7 @@ Peers:
             }
         }
 
-        static string LookupVM(string binaryName)
+        public static string LookupVM(string binaryName)
         {
             Process cmd = new Process();
 
@@ -480,14 +532,16 @@ Peers:
 
             cmd.WaitForExit();
 
-            string result = cmd.StandardOutput.ReadToEnd().Trim();
+            string[] result = cmd.StandardOutput.ReadToEnd().Trim().Split('\n');
 
-            if (result.Contains("Could not find")) throw new NullReferenceException();
+            if (result[0].Contains("Could not find")) throw new NullReferenceException();
 
-            return result;
+            if (!File.Exists(result[0])) throw new NullReferenceException();
+
+            return result[0];
         }
 
-        static (int, int) LookupCores()
+        public static (int, int) LookupCores()
         {
             Process cmd = new Process();
             cmd.StartInfo.RedirectStandardOutput = true;

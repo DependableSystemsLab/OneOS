@@ -638,7 +638,7 @@ namespace OneOS.Runtime
             public bool OutputToShell;
             public string BinaryPath;
             public string Arguments;
-            public List<string> Subscriptions;
+            public List<string> Subscriptions = new List<string>();
             public int CheckpointInterval;
             public float OutputRateLimit;
             public string LastCheckpoint;

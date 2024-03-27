@@ -191,7 +191,7 @@ namespace OneOS.Runtime
             var tasks = new List<Task>();
             var results = new List<string>();
 
-            Console.WriteLine($"\n{this} Syncing Registry...");
+            Console.WriteLine($"\n{this} Syncing Registry with {ActivePeers.Count} peers...");
 
             foreach (var item in ActivePeers)
             {
