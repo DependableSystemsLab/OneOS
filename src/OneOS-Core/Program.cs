@@ -145,7 +145,7 @@ config
                     // if entry address is not given, pick from one of the peers
                     var config = Configuration.LoadConfig(mountPath);
                     var random = new Random();
-                    var peerAddress = arguments.Count > 1 ? IPEndPoint.Parse(arguments[1]) : config.Peers.Values.ToList()[random.Next(0, config.Peers.Count)];
+                    var peerAddress = arguments.Count > 1 ? IPEndPoint.Parse(arguments[1]) : (config.Peers.Count > 0 ? config.Peers.Values.ToList()[random.Next(0, config.Peers.Count)] : IPEndPoint.Parse($"127.0.0.1:{config.Port}"));
 
                     Console.WriteLine($"Starting OneOS Terminal");
                     var terminal = new Terminal(peerAddress);

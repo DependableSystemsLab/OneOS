@@ -90,6 +90,13 @@ Peers:
         {
             if (mountPath == null) mountPath = OneOSPath;
 
+            // look for home directory
+            if (!Directory.Exists(mountPath))
+            {
+                Console.WriteLine($"{mountPath} directory not found. Creating ...");
+                Directory.CreateDirectory(mountPath);
+            };
+
             string configPath = Path.Combine(mountPath, "config.json");
 
             var json = JObject.Parse("{}");
@@ -333,6 +340,26 @@ Peers:
                 }
 
                 vmAgents.Add(vmConfig);
+            }
+
+            // io drivers
+            if (!json.ContainsKey("io")) json["io"] = JArray.Parse("[]");
+
+            JArray ioAgents = (JArray)json["io"];
+
+            Console.WriteLine($"Current list of IO Agents - {ioAgents.Count} agents:\n{string.Join("\n", ioAgents.Select(item => "  - " + ((JObject)item)["name"].ToObject<string>()))}");
+
+            while (Ask("Add an IO Agent? (y/n)") == "y")
+            {
+                string ioName = Ask("IO name (will be used in the public URI of the VM agent - e.g.: ffmpeg-1): ");
+                string ioDriver = Ask("IO driver (e.g.: ffmpeg): ");
+
+                var ioConfig = new JObject();
+                ioConfig["name"] = ioName;
+                ioConfig["driver"] = ioDriver;
+                ioConfig["args"] = new JArray();
+
+                ioAgents.Add(ioConfig);
             }
 
             // cpu allocation
