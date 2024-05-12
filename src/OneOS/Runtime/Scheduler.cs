@@ -838,6 +838,7 @@ namespace OneOS.Runtime
 
             // do exhaustive DFS
             Func<List<string>, bool> search = null;
+            Dictionary<string, List<string>> runtimePools = new Dictionary<string, List<string>>(); // store the eligible runtimes in the agentInfo to quickly select next runtime
             search = nodes =>
             {
                 if (nodes.Count == 0) return true;
@@ -881,6 +882,8 @@ namespace OneOS.Runtime
                     var locations = Runtime.Registry.ListFileLocations(abspath);
                     eligible = locations.Keys.OrderBy(host => networkModel[host].Score()).Reverse().ToList();
                 }
+
+                runtimePools[uid] = eligible;
 
                 foreach (var selected in eligible)
                 {
@@ -1007,6 +1010,8 @@ namespace OneOS.Runtime
                     Console.WriteLine($"{this} node has options: {node.Options.ToJson()}");
                     agentInfo.Options = node.Options.ToDictionary();
                 }
+
+                agentInfo.RuntimePool = runtimePools[uid];
 
                 agentInfo.Runtime = mapping[uid];
                 configurators[nameMap[uid]]?.Invoke(uid, agentInfo);

@@ -60,7 +60,7 @@ let socket = new WebSocket('ws://' + window.location.host + '/wss');
 socket.binaryType = 'arraybuffer';
 socket.addEventListener('message', evt => {
     console.log(evt.data.byteLength);
-    video.src = 'data:image/png;base64,' + btoa(new Uint8Array(evt.data).reduce((acc, item) => acc + String.fromCharCode(item), ''));
+    video.src = 'data:image/jpeg;base64,' + btoa(new Uint8Array(evt.data).reduce((acc, item) => acc + String.fromCharCode(item), ''));
 });
 
 /*

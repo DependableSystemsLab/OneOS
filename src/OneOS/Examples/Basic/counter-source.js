@@ -6,9 +6,9 @@ let timer = setInterval(() => {
         count: count++
     });
 
-    if (count === 1000) {
+    /*if (count === 1000) {
         clearInterval(timer);
 
         process.exit();
-    }
+    }*/
 }, INTERVAL);

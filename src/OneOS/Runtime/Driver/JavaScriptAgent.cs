@@ -27,10 +27,14 @@ namespace OneOS.Runtime.Driver
         private Socket IpcRxSocket;
         private ConcurrentDictionary<string, TaskCompletionSource<object>> PendingIpcRequests;
 
+        private Action<string, object> RuntimeEventHandler;
+
         private JavaScriptAgent(Runtime runtime, string uri, string username) : base(runtime, uri, username)
         {
             PendingIpcRequests = new ConcurrentDictionary<string, TaskCompletionSource<object>>();
             VirtualRuntime = new VirtualRuntime(runtime, this, new RequestDelegate((agentUri, method, methodArgs) => Request(agentUri, method, methodArgs)));
+
+            AttachRuntimeEventHandler();
         }
 
         public JavaScriptAgent(Runtime runtime, string uri, string username, Dictionary<string, string> environ, string filePath, string args) : base(runtime, uri, username, environ, "node", filePath + " " + args)
@@ -41,6 +45,29 @@ namespace OneOS.Runtime.Driver
             VirtualRuntime = new VirtualRuntime(runtime, this, new RequestDelegate((agentUri, method, methodArgs) => Request(agentUri, method, methodArgs)));
 
             InstrumentCode();
+
+            AttachRuntimeEventHandler();
+        }
+
+        private void AttachRuntimeEventHandler()
+        {
+            RuntimeEventHandler = (evtType, evtData) =>
+            {
+                if (Status == ProcessStatus.Running)
+                {
+                    IpcRequest("emitRuntimeEvent", evtType, evtData).ContinueWith(prev =>
+                    {
+                        Console.WriteLine($"{this} Failed to relay runtime event to child process");
+                    }, TaskContinuationOptions.OnlyOnFaulted);
+                }
+            };
+
+            Runtime.OnRuntimeStateEvent += RuntimeEventHandler;
+        }
+
+        private void DetachRuntimeEventHandler()
+        {
+            Runtime.OnRuntimeStateEvent -= RuntimeEventHandler;
         }
 
         // Instrument source code to replace the evaluation context of the program.
@@ -113,14 +140,14 @@ namespace OneOS.Runtime.Driver
             File.Delete(instPath);
         }
 
-        private async Task<object> IpcRequest(string command)
+        private async Task<object> IpcRequest(string command, params object[] arguments)
         {
             var transactionId = RandomText.Next(8);
             var request = new JObject();
             request["type"] = "request";
             request["transactionId"] = transactionId;
             request["method"] = command;
-            request["arguments"] = new JArray();
+            request["arguments"] = JArray.FromObject(arguments);
 
             var serialized = JsonConvert.SerializeObject(request);
             var message = Encoding.UTF8.GetBytes(serialized);
@@ -197,6 +224,27 @@ namespace OneOS.Runtime.Driver
                             break;
                         case "AppendTextFile":
                             task = VirtualRuntime.AppendTextFile(Helpers.ResolvePath(Environment["CWD"], (string)args[0]), (string)args[1]).ContinueWith(prev =>
+                            {
+                                if (prev.Status == TaskStatus.RanToCompletion)
+                                {
+                                    return JToken.FromObject(prev.Result);
+                                }
+                                else throw prev.Exception.InnerException;
+                            });
+                            break;
+                        case "ReadFile":
+                            task = VirtualRuntime.ReadFile(Helpers.ResolvePath(Environment["CWD"], (string)args[0])).ContinueWith(prev =>
+                            {
+                                if (prev.Status == TaskStatus.RanToCompletion)
+                                {
+                                    return JToken.FromObject(prev.Result);
+                                }
+                                else throw prev.Exception.InnerException;
+                            });
+                            break;
+                        case "WriteFile":
+                            byte[] content = Convert.FromBase64String((string)args[1]);
+                            task = VirtualRuntime.WriteFile(Helpers.ResolvePath(Environment["CWD"], (string)args[0]), content).ContinueWith(prev =>
                             {
                                 if (prev.Status == TaskStatus.RanToCompletion)
                                 {
@@ -406,6 +454,8 @@ namespace OneOS.Runtime.Driver
 
         protected override void OnEnd()
         {
+            DetachRuntimeEventHandler();
+
             IpcTxSocket.Stop().Wait();
             IpcRxSocket.Stop().Wait();
 

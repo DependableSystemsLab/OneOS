@@ -259,7 +259,7 @@ namespace OneOS.Runtime
             var agent = Agents.Find(item => item.URI == agentUri);
             if (agent == null)
             {
-                throw new OperationError($"Agent {agentUri} is not on this Runtime");
+                throw new OperationError($"{this} Not monitoring Agent {agentUri} on this Runtime");
             }
 
             var readerPipe = new TcpFileStream(TcpFileStream.OpenMode.Read);

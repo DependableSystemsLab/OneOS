@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OneOS.Runtime;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -17,6 +18,7 @@ namespace OneOS.Common
         private TcpAgent.ServerSideSocket _passiveSocket;
         internal RemoteAgent Gateway;
         private ConnectionStatus _status;
+        public Registry.AgentInfo AgentInfo { get; private set; }
         public bool IsGuaranteedMessageDelivery { get; private set; }
 
         internal TcpAgent.ClientSideSocket ActiveSocket { get => Gateway != null ? Gateway.ActiveSocket : _activeSocket; }
@@ -45,6 +47,26 @@ namespace OneOS.Common
         public RemoteAgent(Agent parent, string uri, RemoteAgent gateway, bool guaranteeDelivery = true) : base(parent)
         {
             URI = uri;
+            Gateway = gateway;
+            SendFailedQueue = new MessageQueue(this, "in", QueueDirection.Inbox);
+            IsGuaranteedMessageDelivery = guaranteeDelivery;
+
+            if (IsGuaranteedMessageDelivery)
+            {
+                OnConnected += () =>
+                {
+                    //Console.WriteLine($"{this} Gateway Connected");
+                    SendFailedMessages();
+                };
+
+                Gateway.OnConnected += OnConnected;
+            }
+        }
+
+        public RemoteAgent(Agent parent, Registry.AgentInfo agentInfo, RemoteAgent gateway, bool guaranteeDelivery = true) : base(parent)
+        {
+            URI = agentInfo.URI;
+            AgentInfo = agentInfo;
             Gateway = gateway;
             SendFailedQueue = new MessageQueue(this, "in", QueueDirection.Inbox);
             IsGuaranteedMessageDelivery = guaranteeDelivery;

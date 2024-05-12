@@ -1,5 +1,5 @@
 ﻿if (process.argv.length < 3) {
-    console.error("Provide video device URI. E.g., node video-viewer.js /dev/t1.example.org/vid0");
+    console.error("Provide video device URI. E.g., node streamer.js /dev/t1.example.org/vid0");
     process.exit();
 }
 

@@ -2,6 +2,7 @@
 const fs = require('fs');
 const net = require('net');
 const stream = require('stream');
+const events = require('events');
 
 // Helpers
 const ID_CHARSET = 'abcdefghijklmnopqrstuvwxyz';
@@ -216,6 +217,9 @@ class DirectPipe extends stream.Duplex {
             else if (this.format === 'json') {
                 this.__receive = this.createJsonReceiver();
             }
+            else if (this.format === 'mjpeg') {
+                this.__receive = this.createMjpegReceiver();
+            }
             else {
                 this.__receive = data => {
                     this.push(data);
@@ -317,6 +321,52 @@ class DirectPipe extends stream.Duplex {
                 frameCursor += chunkSize;
 
                 chunkStart = 0;
+            }
+        }
+
+        return receive;
+    }
+
+    createMjpegReceiver() {
+        let frameBuffer = Buffer.alloc(131072);
+        let frameCursor = 0;
+        let pieceStart = -1;
+
+        const receive = (buffer) => {
+            // Process the chunk to find JPEG frames
+            let pieceSize = 0;
+
+            for (let i = 0; i < buffer.length - 1; i++) {
+                if (pieceStart < 0 && buffer[i] === 0xFF && buffer[i + 1] === 0xD8) {
+                    // Start of JPEG
+                    frameCursor = 0;
+                    pieceStart = i;
+                }
+                else if (pieceStart >= 0 && buffer[i] === 0xFF && buffer[i + 1] === 0xD9) {
+                    // End of JPEG
+                    pieceSize = i + 2 - pieceStart;
+                    buffer.copy(frameBuffer, frameCursor, pieceStart, i + 2);
+                    frameCursor += pieceSize;
+
+                    // frame is ready, emit payload
+                    const frame = Buffer.alloc(frameCursor);
+                    frameBuffer.copy(frame, 0, 0, frameCursor);
+                    // this.frames.push(frame);
+                    this.push(frame);
+
+                    // this.stopWatch.count();
+                    // console.log(this.stopWatch.rate);
+
+                    pieceStart = -1;
+                }
+            }
+
+            if (pieceStart >= 0) {
+                pieceSize = buffer.length - pieceStart;
+                buffer.copy(frameBuffer, frameCursor, pieceStart, buffer.length);
+                frameCursor += pieceSize;
+
+                pieceStart = 0;
             }
         }
 
@@ -543,6 +593,8 @@ const Runtime = {
 
                 filename = root.meta.filename;
 
+                const runtimeEventEmitter = new events.EventEmitter(); // event emitter used to notify about OneOS runtime events to the user process
+
                 const initRpc = (rpSocket, prSocket) => {
                     rpc = new RpcSocket(rpSocket, prSocket, {
                         'pause': () => {
@@ -556,6 +608,13 @@ const Runtime = {
                         'checkpoint': () => {
                             return root.snapshot();
                         },
+                        'emitRuntimeEvent': (evtType, evtData) => {
+                            runtimeEventEmitter.emit('data', {
+                                type: evtType,
+                                data: evtData
+                            });
+                            return null;
+                        }
                     });
                     resolve(rpc);
                 }
@@ -608,14 +667,30 @@ const Runtime = {
                 }
 
                 // override fs functions
-                fs.readFile = function readFile(path, callback) {
-                    Runtime.readFile(path).then(data => {
+                fs.readFile = function readFile(path, arg2, arg3) {
+                    let encoding = 'raw', callback;
+                    if (typeof arg2 === 'string') {
+                        encoding = arg2;
+                        callback = arg3;
+                    }
+                    else {
+                        callback = arg2;
+                    }
+                    Runtime.readFile(path, encoding).then(data => {
                         callback(null, data);
                     }).catch(err => callback(err));
                 }
 
-                fs.writeFile = function writeFile(path, content, callback) {
-                    Runtime.writeFile(path, content).then(data => {
+                fs.writeFile = function writeFile(path, content, arg3, arg4) {
+                    let encoding = 'raw', callback;
+                    if (typeof arg3 === 'string') {
+                        encoding = arg3;
+                        callback = arg4;
+                    }
+                    else {
+                        callback = arg3;
+                    }
+                    Runtime.writeFile(path, content, encoding).then(data => {
                         callback(null, data);
                     }).catch(err => callback(err));
                 }
@@ -730,6 +805,7 @@ const Runtime = {
 
                 // attach oneos-specific API to the process object
                 process.runtime = {
+                    events: runtimeEventEmitter,
                     listAllAgents: Runtime.listAllAgents,
                     listAllPipes: Runtime.listAllPipes,
                     listAllRuntimes: Runtime.listAllRuntimes,
@@ -751,14 +827,27 @@ const Runtime = {
         // TODO: support this function
         return fs.writeFileSync(path, content, opts);
     },
-    readFile: async (path) => {
+    readFile: async (path, encoding) => {
         await connected;
-        let result = await rpc.request('ReadTextFile', path);
+        let result;
+        if (encoding === 'raw') {
+            result = await rpc.request('ReadFile', path);
+            result = Buffer.from(result, 'base64');
+        }
+        else {
+            result = await rpc.request('ReadTextFile', path);
+        }
         return result;
     },
-    writeFile: async (path, content) => {
+    writeFile: async (path, content, encoding) => {
         await connected;
-        let result = await rpc.request('WriteTextFile', path, String(content));
+        let result;
+        if (encoding === 'raw') {
+            result = await rpc.request('WriteFile', path, content.toString('base64'));
+        }
+        else {
+            result = await rpc.request('WriteTextFile', path, String(content));
+        }
         return result;
     },
     appendFile: async (path, content) => {
@@ -864,7 +953,7 @@ const Runtime = {
     createServer: (options, connectionListener) => net.createServer(options, connectionListener),
     /* io module */
     createVideoInputStream: (path) => {
-        let stream = new DirectPipe('io', 'read', 'segment');
+        let stream = new DirectPipe('io', 'read', 'mjpeg');
 
         (async () => {
             await connected;
@@ -897,8 +986,13 @@ const Runtime = {
 
         (async () => {
             await connected;
-            let result = await rpc.request('CreateAgentMonitorStream', agentUri);
-            stream.connect(result);
+            try {
+                let result = await rpc.request('CreateAgentMonitorStream', agentUri);
+                stream.connect(result);
+            }
+            catch (err) {
+                stream.destroy(err);
+            }
         })();
 
         return stream;

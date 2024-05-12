@@ -533,10 +533,27 @@ namespace OneOS.Common
             Sources = new Dictionary<string, Source>();
         }
 
+        public bool HasSource(string upstream)
+        {
+            return Sources.ContainsKey(upstream);
+        }
+
         public Source AddSource(string upstream, TcpAgent.ServerSideSocket socket)
         {
             var source = new Source(upstream, socket);
             Sources.Add(upstream, source);
+            return source;
+        }
+
+        public Source UpdateSource(string upstream, TcpAgent.ServerSideSocket socket)
+        {
+            var oldSource = Sources[upstream];
+
+            var source = new Source(upstream, socket);
+            Sources[upstream] = source;
+
+            oldSource.Stop();
+
             return source;
         }
 

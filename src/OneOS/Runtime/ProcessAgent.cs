@@ -275,8 +275,9 @@ namespace OneOS.Runtime
                 var errorMessage = Process.StandardError.ReadToEnd();
                 Console.WriteLine($"{this} Process {Process.Id} Error:\n{errorMessage}");
             }*/
+            var bufferedErrors = string.Join("", StderrBuffer.Select(chunk => Encoding.UTF8.GetString(chunk)));
             var errorMessage = Process.StandardError.ReadToEnd();
-            Console.WriteLine($"{this} Process {Process.Id} Error:\n{errorMessage}");
+            Console.WriteLine($"{this} Process {Process.Id} Error:\n{bufferedErrors}{errorMessage}");
 
             // Wait for any outgoing pipes to finish writing
             Task.Run(async () =>
@@ -304,9 +305,11 @@ namespace OneOS.Runtime
 
         public override Task Stop()
         {
+            Console.WriteLine($"{this} Stopping ProcessAgent...");
+
             // If the process is still running, this is a force kill.
             // A force kill should not emit the onExit handler
-            if (!Process.HasExited)
+            if (Status != ProcessStatus.Initialized && !Process.HasExited)
             {
                 OnExit = null;
                 Process.Kill();
@@ -378,14 +381,30 @@ namespace OneOS.Runtime
             }
         }
 
-        internal void AddDirectInputPipe(string upstream, string pipeGroup, TcpAgent.ServerSideSocket socket)
+        internal void AddDirectInputPipe(string upstream, string pipeGroup, TcpAgent.ServerSideSocket socket, string mode = "create")
         {
             if (!DirectInputPipes.ContainsKey(pipeGroup))
             {
                 DirectInputPipes.Add(pipeGroup, new InputPipe());
             }
 
-            var source = DirectInputPipes[pipeGroup].AddSource(upstream, socket);
+            // check if Source was already added
+            // - if it was, check if the host runtime is dead, to determine whether this is a restored pipe
+            // - if it is not, simply add the input pipe
+            InputPipe.Source source;
+            if (DirectInputPipes[pipeGroup].HasSource(upstream) && mode == "update")
+            {
+                /*var srcRuntime = Runtime.Registry.Agents[upstream].Runtime;
+                if (Runtime.ActivePeers.Contains(srcRuntime))
+                {
+                    throw new OperationError($"{this} Cannot add DirectInputPipe from {upstream}, because there is already a DirectInputPipe coming from an active runtime hosting the agent {upstream}");
+                }*/
+                source = DirectInputPipes[pipeGroup].UpdateSource(upstream, socket);
+            }
+            else
+            {
+                source = DirectInputPipes[pipeGroup].AddSource(upstream, socket);
+            }
 
             // Check if pipe is a merge pipe, and if ordering is required
             var pipeInfo = Runtime.Registry.GetPipesBySinkAgentURI(URI).Where(pipe => pipe.Source == upstream && pipe.Group == pipeGroup).First();
@@ -802,7 +821,7 @@ namespace OneOS.Runtime
                     if (Cts.IsCancellationRequested) break;
 
                     int bytesRead = await Process.StandardError.BaseStream.ReadAsync(buffer, 0, buffer.Length, Cts.Token);
-                    while (bytesRead > 0)
+                    if (bytesRead > 0)
                     {
                         //var errorMessage = Encoding.UTF8.GetString(buffer, 0, bytesRead);
 
@@ -811,13 +830,15 @@ namespace OneOS.Runtime
 
                         await Task.Yield();
 
-                        if (Cts.IsCancellationRequested) break;
+                        //if (Cts.IsCancellationRequested) break;
 
-                        bytesRead = await Process.StandardError.BaseStream.ReadAsync(buffer, 0, buffer.Length, Cts.Token);
+                        //bytesRead = await Process.StandardError.BaseStream.ReadAsync(buffer, 0, buffer.Length, Cts.Token);
                     }
-
-                    // Use a large delay, assuming that errors are infrequent
-                    await Task.Delay(500);
+                    else
+                    {
+                        // Use a large delay, assuming that errors are infrequent
+                        await Task.Delay(50);
+                    }
                 }
             }
             catch (OperationCanceledException ex)
@@ -832,6 +853,9 @@ namespace OneOS.Runtime
 
             // This loop eventually breaks because Stop() is called by the Runtime.
             Console.WriteLine($"{this} Agent.Cts Canceled (during stderr read)");
+            
+            var bufferedErrors = string.Join("", StderrBuffer.Select(chunk => Encoding.UTF8.GetString(chunk)));
+            Console.WriteLine($"{this} Buffered Errors:\n{bufferedErrors}");
         }
 
         private Action<byte[]> CreateJsonStdinHandler(Action<byte[]> nextHandler)

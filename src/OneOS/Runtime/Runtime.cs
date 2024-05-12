@@ -45,6 +45,7 @@ namespace OneOS.Runtime
         private Dictionary<int, ReverseProxy> ReverseProxies;       // Reverse proxies for global sockets
 
         private Action OnNextTick;  // A quick hack for emulating events
+        public event Action<string, object> OnRuntimeStateEvent;   // we use the C# events as this message should act like an "interrupt" and not as a regular message
 
         public string Domain { get => Config.Domain; }
         internal string LocalAddress { get => $"{Dns.GetHostName()}:{Config.Port}"; }
@@ -133,9 +134,11 @@ namespace OneOS.Runtime
                             // Notify RegistryManager
                             await Request(RegistryManagerUri, "DropRuntime", peerUri);
 
-                            Console.WriteLine($"{this} Runtime Dropped Successfully");
+                            Console.WriteLine($"{this} Runtime {peerUri} Dropped Successfully");
                         });
                     }
+
+                    //OnRuntimeStateEvent?.Invoke("runtime-leave", peerUri);
                 }
             };
 
@@ -149,6 +152,36 @@ namespace OneOS.Runtime
                 task.Wait();
 
                 Console.WriteLine($"{this} {peerUri} was brought up to date");
+
+                bool admitted = AdmitPeer(peerUri);
+
+                if (admitted)
+                {
+                    // if this node is leader, notify all other peers
+                    if (IsLeader)
+                    {
+                        Task.Run(async () =>
+                        {
+                            // Notify other peers that a peer was admitted
+                            var tasks = new List<Task>();
+
+                            foreach (var item in ActivePeers)
+                            {
+                                //Console.WriteLine($"{this} Asking {item} to drop {peerUri}");
+                                tasks.Add(Request(item, "AdmitPeer", peerUri));
+                            }
+
+                            await Task.WhenAll(tasks);
+
+                            // Notify RegistryManager
+                            await Request(RegistryManagerUri, "AdmitRuntime", peerUri);
+
+                            Console.WriteLine($"{this} Runtime {peerUri} Admitted Successfully");
+                        });
+                    }
+                }
+
+                //OnRuntimeStateEvent?.Invoke("runtime-join", peerUri);
             };
         }
 
@@ -231,6 +264,8 @@ namespace OneOS.Runtime
                 RemoteAgents[peerUri].DropSockets();
                 Console.WriteLine($"{this} {peerUri} dropped");
 
+                OnRuntimeStateEvent?.Invoke("runtime-leave", peerUri);
+
                 // If the dropped peer (peerUri) was the primary runtime for the
                 // standby agents that this runtime is hosting, start the standby agents
                 foreach (var item in StandbyAgents)
@@ -248,7 +283,15 @@ namespace OneOS.Runtime
             return false;
         }
 
-        // This method is called by the runtime hosting the Sink of the DirectOutputPipe
+        [RpcMethod]
+        public bool AdmitPeer(string peerUri)
+        {
+            OnRuntimeStateEvent?.Invoke("runtime-join", peerUri);
+
+            return true;
+        }
+
+        // This method is called by the remote runtime hosting the Sink of the DirectOutputPipe
         [RpcMethod]
         public bool RestoreDirectOutputPipe(string sinkRuntime, string pipeKey)
         {
@@ -258,7 +301,7 @@ namespace OneOS.Runtime
             {
                 var agent = (ProcessAgent)source;
 
-                Console.WriteLine($"{this} Updating Pipe ({pipeInfo.Group}) {pipeInfo.Source} -> {pipeInfo.Sink}");
+                Console.WriteLine($"{this} Restoring Pipe ({pipeInfo.Group}) {pipeInfo.Source} -> {pipeInfo.Sink}");
                 CreateAgentLinkAt(sinkRuntime, pipeInfo.Source, pipeInfo.Sink, pipeInfo.Group).ContinueWith(prev =>
                 {
                     if (prev.Status == TaskStatus.RanToCompletion)
@@ -278,7 +321,7 @@ namespace OneOS.Runtime
             {
                 var agent = (OneOSLambdaAgent)source;
 
-                Console.WriteLine($"{this} Updating Pipe ({pipeInfo.Group}) {pipeInfo.Source} -> {pipeInfo.Sink}");
+                Console.WriteLine($"{this} Restoring Pipe ({pipeInfo.Group}) {pipeInfo.Source} -> {pipeInfo.Sink}");
                 CreateAgentLinkAt(sinkRuntime, pipeInfo.Source, pipeInfo.Sink, pipeInfo.Group).ContinueWith(prev =>
                 {
                     if (prev.Status == TaskStatus.RanToCompletion)
@@ -467,8 +510,33 @@ namespace OneOS.Runtime
                 // Resolve the global paths to local paths before proceeding
                 var tokens = agentInfo.Arguments.Split(' ');
                 var locations = Registry.ListFileLocations(tokens[0], URI);
-                var copyPath = locations[URI];  // We assume that this Runtime has the file
-                var localAbsolutePath = StorageManager.GetLocalAbsolutePath(copyPath);
+                //var copyPath = locations[URI];  // We assume that this Runtime has the file
+                //var localAbsolutePath = StorageManager.GetLocalAbsolutePath(copyPath);
+
+                string localAbsolutePath;
+
+                // if this Runtime has the file, translate to local path
+                if (locations.Keys.Contains(URI))
+                {
+                    var copyPath = locations[URI];
+                    localAbsolutePath = StorageManager.GetLocalAbsolutePath(copyPath);
+
+                    Console.WriteLine($"{this} has the file {tokens[0]} locally");
+                }
+                else
+                {
+                    // fetch the file and use temporary path
+                    var copyHolder = locations.Keys.ToList().PickRandom();
+                    var copyPath = locations[copyHolder];
+
+                    Console.WriteLine($"{this} does not have the file {tokens[0]} -- reading from {copyHolder}");
+
+                    var response = await Request(copyHolder + "/storage", "ReadTextFile", copyPath);
+                    var content = (string)response;
+                    localAbsolutePath = Path.Combine(TempDataPath, Path.GetFileName(tokens[0]));
+                    File.WriteAllText(localAbsolutePath, content);
+                }
+
                 var scriptArguments = string.Join(" ", tokens.Skip(1));
 
                 OneOSScriptAgent script = new OneOSScriptAgent(this, agentInfo.URI, agentInfo.User, agentInfo.Environment, localAbsolutePath, scriptArguments);
@@ -1197,7 +1265,7 @@ namespace OneOS.Runtime
 
                 foreach (var pipe in outPipes)
                 {
-                    var linkReady = CreateAgentLink(agentInfo.URI, pipe.Sink, pipe.Group).ContinueWith(prev =>
+                    var linkReady = CreateAgentLink(agentInfo.URI, pipe.Sink, pipe.Group, "update").ContinueWith(prev =>
                     {
                         if (prev.Status == TaskStatus.RanToCompletion)
                         {
@@ -1283,13 +1351,28 @@ namespace OneOS.Runtime
             pipesReady.Task.ContinueWith(async _ =>
             {
                 agent.Start();
-                Console.WriteLine($"{this} Successfully started {agentInfo.URI}");
+                Console.WriteLine($"{this} Successfully started {agentInfo.URI} (converted from standby to primary)");
 
                 // restore any input pipes by notifying the upstream agent
                 var inPipes = Registry.GetPipesBySinkAgentURI(agentInfo.URI);
                 var upstreamsReady = inPipes.Select(pipeInfo =>
                 {
                     var sourceRuntime = Registry.Agents[pipeInfo.Source].Runtime;
+                    // If two or more communicating StandbyAgents are started on this runtime,
+                    // their pipes are already created by the AddDirectOutputPipe above.
+                    // In that case, we don't need to make a RestoreDirectOutputPipe call.
+                    // In fact, it leads to an ArgumentException (key already exists).
+                    if (sourceRuntime == URI
+                        && agentInfo.Language != Registry.AgentInfo.LanguageInfo.OneOSKernel
+                        && agentInfo.Language != Registry.AgentInfo.LanguageInfo.OneOS)
+                    {
+                        ProcessAgent proc = (ProcessAgent)agent;
+                        if (proc.DirectInputPipes.ContainsKey(pipeInfo.Group)
+                            && proc.DirectInputPipes[pipeInfo.Group].HasSource(pipeInfo.Source))
+                        {
+                            return null;
+                        }
+                    }
                     return Request(sourceRuntime, "RestoreDirectOutputPipe", URI, pipeInfo.Key);
                 }).ToList();
 
@@ -1301,6 +1384,14 @@ namespace OneOS.Runtime
                 }
             });
 
+        }
+
+        private void RemoveStandbyAgent(Registry.AgentInfo agentInfo)
+        {
+            if (StandbyAgents.ContainsKey(agentInfo.URI))
+            {
+                StandbyAgents.Remove(agentInfo.URI);
+            }
         }
 
         private RemoteAgent GetOrCreateRemoteAgent(string uri)
@@ -1364,7 +1455,24 @@ namespace OneOS.Runtime
             return RemoteAgents[uri];
         }
 
-        private async Task<TcpAgent.ClientSideSocket> CreateAgentLinkAt(string host, string upstream, string downstream, string pipeGroup)
+        private RemoteAgent GetOrCreateRemoteAgent(Registry.AgentInfo agentInfo, bool guaranteeDelivery = true)
+        {
+            if (!RemoteAgents.ContainsKey(agentInfo.URI))
+            {
+                var runtime = RemoteAgents[agentInfo.Runtime];
+                var remote = new RemoteAgent(this, agentInfo, runtime, guaranteeDelivery);
+                //remote.SetActiveSocket(runtime.ActiveSocket);
+                //remote.SetPassiveSocket(runtime.PassiveSocket);
+
+                RemoteAgents.Add(agentInfo.URI, remote);
+                Router.AddAgent(remote);
+                remote.Start();
+                //Console.WriteLine($"{this} Added RemoteAgent {uri}");
+            }
+            return RemoteAgents[agentInfo.URI];
+        }
+
+        private async Task<TcpAgent.ClientSideSocket> CreateAgentLinkAt(string host, string upstream, string downstream, string pipeGroup, string mode = "create")
         {
             TcpAgent.ClientSideSocket socket;
 
@@ -1379,7 +1487,7 @@ namespace OneOS.Runtime
 
             await socket.Connected;
 
-            var request = RuntimeMessage.Create(RuntimeMessage.RuntimeMessageType.AgentLinkRequest, upstream, downstream, pipeGroup);
+            var request = RuntimeMessage.Create(RuntimeMessage.RuntimeMessageType.AgentLinkRequest, upstream, downstream, pipeGroup, mode);
             await socket.StreamWrite(request.Serialize());
 
             var responsePayload = await socket.StreamRead();
@@ -1400,10 +1508,10 @@ namespace OneOS.Runtime
             return socket;
         }
 
-        private Task<TcpAgent.ClientSideSocket> CreateAgentLink(string upstream, string downstream, string pipeGroup)
+        private Task<TcpAgent.ClientSideSocket> CreateAgentLink(string upstream, string downstream, string pipeGroup, string mode = "create")
         {
             var host = Registry.Agents[downstream].Runtime;
-            return CreateAgentLinkAt(host, upstream, downstream, pipeGroup);
+            return CreateAgentLinkAt(host, upstream, downstream, pipeGroup, mode);
         }
 
         private async Task ProfileConnection(string peerUri)
@@ -1516,7 +1624,7 @@ namespace OneOS.Runtime
 
                                         var receiver = (ProcessAgent)UserAgents[request.Arguments[1]];
 
-                                        receiver.AddDirectInputPipe(request.Arguments[0], request.Arguments[2], socket);
+                                        receiver.AddDirectInputPipe(request.Arguments[0], request.Arguments[2], socket, request.Arguments[3]);
 
                                         connected = true;
                                     }
@@ -1546,7 +1654,7 @@ namespace OneOS.Runtime
 
                                             var receiver = (ProcessAgent)UserAgents[request.Arguments[1]];
 
-                                            receiver.AddDirectInputPipe(request.Arguments[0], request.Arguments[2], socket);
+                                            receiver.AddDirectInputPipe(request.Arguments[0], request.Arguments[2], socket, request.Arguments[3]);
 
                                             connected = true;
                                         }
@@ -2064,7 +2172,21 @@ namespace OneOS.Runtime
                 foreach (var item in UserAgents)
                 {
                     // Agent is no longer alive
-                    if (!Registry.Agents.ContainsKey(item.Key)) RemoveUserAgent(item.Key);
+                    if (!Registry.Agents.ContainsKey(item.Key))
+                    {
+                        RemoveUserAgent(item.Key);
+                        OnRuntimeStateEvent?.Invoke("agent-leave", item.Key);
+                    }
+                }
+
+                foreach (var item in RemoteAgents)
+                {
+                    // Agent is no longer alive
+                    if (!Registry.Agents.ContainsKey(item.Key) && item.Value.AgentInfo != null)
+                    {
+                        RemoveRemoteAgent(item.Value.AgentInfo);
+                        OnRuntimeStateEvent?.Invoke("agent-leave", item.Key);
+                    }
                 }
 
                 foreach (var item in Registry.Agents)
@@ -2075,29 +2197,6 @@ namespace OneOS.Runtime
                         if (RemoteAgents.ContainsKey(item.Key))
                         {
                             RemoveRemoteAgent(item.Value);
-                            /*var agent = RemoteAgents[item.Key];
-                            agent.Stop();
-                            RemoteAgents.Remove(item.Key);
-                            Router.RemoveAgent(agent);
-
-                            if (item.Value.Language != Registry.AgentInfo.LanguageInfo.OneOSKernel)
-                            {
-                                Router.RemoveSubscriber(item.Key + ":stdin", item.Key);
-                            }
-                            // Remote UserShell is special, as processes may redirect stdout to shell's stdout
-                            else if (item.Value.Language == Registry.AgentInfo.LanguageInfo.OneOSKernel
-                                && item.Value.BinaryPath == "UserShell")
-                            {
-                                Router.RemoveHandlers(item.Key + ":stdout");
-                            }
-
-                            foreach (var child in item.Value.Children)
-                            {
-                                var childAgent = RemoteAgents[child];
-                                childAgent.Stop();
-                                RemoteAgents.Remove(child);
-                                Router.RemoveAgent(childAgent);
-                            }*/
                         }
 
                         if (!UserAgents.ContainsKey(item.Key))
@@ -2113,6 +2212,15 @@ namespace OneOS.Runtime
                                 Console.WriteLine($"{this} Creating agent {item.Key}");
                                 CreateUserAgent(item.Value);
                             }
+
+                            OnRuntimeStateEvent?.Invoke("agent-join", new Dictionary<string, object>()
+                            {
+                                { "uri", item.Value.URI },
+                                { "pid", item.Value.NRI },
+                                { "runtime", item.Value.Runtime },
+                                { "bin", item.Value.BinaryPath },
+                                { "args", item.Value.Arguments }
+                            });
                         }
                     }
                     else
@@ -2125,7 +2233,7 @@ namespace OneOS.Runtime
 
                         if (!RemoteAgents.ContainsKey(item.Key))
                         {
-                            var remote = GetOrCreateRemoteAgent(item.Key, item.Value.Runtime);
+                            var remote = GetOrCreateRemoteAgent(item.Value);
                             if (item.Value.Language != Registry.AgentInfo.LanguageInfo.OneOSKernel)
                             {
                                 //Router.AddSubscriber(item.Key + ":stdin", item.Key);
@@ -2149,6 +2257,15 @@ namespace OneOS.Runtime
                             {
                                 GetOrCreateRemoteAgent(child, item.Value.Runtime);
                             }
+
+                            OnRuntimeStateEvent?.Invoke("agent-join", new Dictionary<string, object>()
+                            {
+                                { "uri", item.Value.URI },
+                                { "pid", item.Value.NRI },
+                                { "runtime", item.Value.Runtime },
+                                { "bin", item.Value.BinaryPath },
+                                { "args", item.Value.Arguments }
+                            });
                         }
                         else if (RemoteAgents[item.Key].Gateway.URI != item.Value.Runtime)
                         {
@@ -2159,12 +2276,26 @@ namespace OneOS.Runtime
                             {
                                 RemoteAgents[child].UpdateGateway(newRuntime);
                             }
+
+                            OnRuntimeStateEvent?.Invoke("agent-join", new Dictionary<string, object>()
+                            {
+                                { "uri", item.Value.URI },
+                                { "pid", item.Value.NRI },
+                                { "runtime", item.Value.Runtime },
+                                { "bin", item.Value.BinaryPath },
+                                { "args", item.Value.Arguments }
+                            });
                         }
 
                         // If this runtime is a standby runtime, create the agent without starting it
                         if (item.Value.StandbyRuntime == URI && !StandbyAgents.ContainsKey(item.Key))
                         {
                             CreateStandbyAgent(item.Value);
+                        }
+                        
+                        if (item.Value.StandbyRuntime != URI && StandbyAgents.ContainsKey(item.Key))
+                        {
+                            RemoveStandbyAgent(item.Value);
                         }
                         
                     }

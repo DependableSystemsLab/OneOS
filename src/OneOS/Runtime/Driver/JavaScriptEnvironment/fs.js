@@ -1,13 +1,29 @@
 ﻿const Runtime = require('./Runtime.js');
 
-function readFile(path, callback) {
-    Runtime.readFile(path).then(data => {
+function readFile(path, arg2, arg3) {
+    let encoding = 'raw', callback;
+    if (typeof arg2 === 'string') {
+        encoding = arg2;
+        callback = arg3;
+    }
+    else {
+        callback = arg2;
+    }
+    Runtime.readFile(path, encoding).then(data => {
         callback(null, data);
     }).catch(err => callback(err));
 }
 
-function writeFile(path, content, callback) {
-    Runtime.writeFile(path, content).then(data => {
+function writeFile(path, content, arg3, arg4) {
+    let encoding = 'raw', callback;
+    if (typeof arg3 === 'string') {
+        encoding = arg3;
+        callback = arg4;
+    }
+    else {
+        callback = arg3;
+    }
+    Runtime.writeFile(path, content, encoding).then(data => {
         callback(null, data);
     }).catch(err => callback(err));
 }

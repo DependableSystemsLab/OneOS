@@ -295,7 +295,7 @@ Vue.component('dropdown', {
 });
 
 Vue.component('sortable-table', {
-    props: ['items', 'keyfield'],
+    props: ['items', 'keyfield', 'clickable'],
     data: () => ({
         sorted: [],
         itemsPerPage: 25,
@@ -338,7 +338,7 @@ Vue.component('sortable-table', {
             </tr>
         </thead>
         <tbody>
-            <tr v-for="item in sorted" :key="item[keyfield]">
+            <tr v-for="item in sorted" :key="item[keyfield]" :style="{ 'cursor': clickable ? 'pointer' : 'initial' }">
                 <td v-for="field in fields" :key="field.name"><a @click="$emit('rowclick', item)">{{ item[field.name] }}</a></td>
             </tr>
             <tr v-if="sorted.length === 0">
@@ -518,13 +518,20 @@ Vue.component('file-system-viewer', {
         },
         viewFile: function (abspath) {
             ajax.get('/fs' + abspath, true).then(resp => {
+                const ext = abspath.split('.').reverse()[0];
 
-                if (TextEditor.SUPPORTED_FILE_TYPES.includes(resp.type)) {
+                if (TextEditor.SUPPORTED_FILE_TYPES.includes(resp.type) || ext === 'osh') {
                     resp.text().then(text => {
                         this.$root.openApp('textEditor', {
                             filePath: abspath,
                             content: text
                         });
+                    });
+                }
+                else if (ImageViewer.SUPPORTED_FILE_TYPES.includes(resp.type)) {
+                    this.$root.openApp('imageViewer', {
+                        filePath: abspath,
+                        content: URL.createObjectURL(resp)
                     });
                 }
                 else {
@@ -611,6 +618,13 @@ Vue.component('text-editor', {
     </div>`
 });
 
+Vue.component('image-viewer', {
+    props: [ 'appInstance' ],
+    template: `<div class="image-viewer">
+        <img v-if="appInstance.content" :src="appInstance.content"/>
+    </div>`
+});
+
 Vue.component('video-viewer', {
     props: [ 'deviceUri' ],
     mounted: function () {
@@ -626,7 +640,7 @@ Vue.component('video-viewer', {
             }));
 
             socket.addEventListener('message', evt => {
-                video.src = 'data:image/png;base64,' + btoa(new Uint8Array(evt.data).reduce((acc, item) => acc + String.fromCharCode(item), ''));
+                video.src = 'data:image/jpeg;base64,' + btoa(new Uint8Array(evt.data).reduce((acc, item) => acc + String.fromCharCode(item), ''));
             });
         });
 
@@ -976,6 +990,7 @@ Vue.component('agent-monitor', {
 });
 
 Vue.component('resource-monitor', {
+    inject: ['$alert'],
     data: () => ({
         agents: [],
         pipes: [],
@@ -1010,11 +1025,16 @@ Vue.component('resource-monitor', {
             });
         },
         viewAgent: function (agent) {
-            setTimeout(() => {
-                this.$root.openApp('agentMonitor', {
-                    agentUri: agent.uri
+            if (AgentMonitor.KERNEL_AGENTS.includes(agent.uri)) {
+                this.$alert(`Kernel Agent "${agent.uri}" cannot be monitored`);
+            }
+            else {
+                setTimeout(() => {
+                    this.$root.openApp('agentMonitor', {
+                        agentUri: agent.uri
+                    });
                 });
-            });
+            }
         },
         viewIODevice: function (ioDevice) {
             setTimeout(() => {
@@ -1031,12 +1051,57 @@ Vue.component('resource-monitor', {
         this.getAllRuntimes();
         this.getAllSockets();
         this.getAllIO();
+
+        const socket = new WebSocket('ws://' + window.location.host + '/ws');
+
+        socket.addEventListener('open', evt => {
+            socket.send(JSON.stringify({
+                connection: 'ResourceMonitor'
+            }));
+
+            socket.addEventListener('message', evt => {
+                const message = JSON.parse(evt.data);
+                console.log(message);
+                if (message.type === 'runtime-leave') {
+                    const runtime = this.runtimes.find(item => item.uri === message.data);
+                    if (runtime) {
+                        runtime.status = 'Dead';
+                        //this.$set(runtime, 'status', 'Dead');
+                    }
+                }
+                else if (message.type === 'runtime-join') {
+                    const runtime = this.runtimes.find(item => item.uri === message.data);
+                    if (runtime) {
+                        runtime.status = 'Alive';
+                        //this.$set(runtime, 'status', 'Dead');
+                    }
+                }
+                else if (message.type === 'agent-leave') {
+                    const index = this.agents.findIndex(item => item.uri === message.data);
+                    this.agents.splice(index, 1);
+                }
+                else if (message.type === 'agent-join') {
+                    const agent = this.agents.find(item => item.uri === message.data.uri);
+                    if (agent) {
+                        agent.runtime = message.data.runtime;
+                    }
+                    else {
+                        this.agents.push(message.data);
+                    }
+                }
+            });
+        });
+
+        this.socket = socket;
+    },
+    beforeDestroy: function () {
+        this.socket.close();
     },
     template: `<div class="resource-monitor">
         <tabs>
             <tab label="Agents">
                 <div class="padding-1 bg-1">
-                    <sortable-table :items="agents" keyfield="uri" @rowclick="viewAgent">
+                    <sortable-table :items="agents" keyfield="uri" @rowclick="viewAgent" clickable="true">
                         <sortable-table-column field="uri">Agent URI</sortable-table-column>
                         <sortable-table-column field="pid">PID</sortable-table-column>
                         <sortable-table-column field="runtime">Runtime</sortable-table-column>
@@ -1066,7 +1131,7 @@ Vue.component('resource-monitor', {
             </tab>
             <tab label="IO">
                 <div class="padding-1 bg-1">
-                    <sortable-table :items="io" keyfield="uri" @rowclick="viewIODevice">
+                    <sortable-table :items="io" keyfield="uri" @rowclick="viewIODevice" clickable="true">
                         <sortable-table-column field="uri">URI</sortable-table-column>
                         <sortable-table-column field="deviceType">Device Type</sortable-table-column>
                         <sortable-table-column field="driver">Driver</sortable-table-column>
@@ -1223,6 +1288,18 @@ class TextEditor extends WebTerminalApp {
 }
 TextEditor.SUPPORTED_FILE_TYPES = ['application/javascript', 'application/json', 'text/plain', 'text/html', 'text/csv'];
 
+class ImageViewer extends WebTerminalApp {
+    constructor(kwargs) {
+        super('Image Viewer', 'image-viewer');
+
+        if (kwargs) {
+            this.filePath = kwargs.filePath;    // the absolute path of the file to open
+            this.content = kwargs.content;
+        }
+    }
+}
+ImageViewer.SUPPORTED_FILE_TYPES = ['image/jpeg', 'image/png'];
+
 class IOMonitor extends WebTerminalApp {
     constructor(kwargs) {
         super('IO Monitor', 'io-monitor');
@@ -1241,6 +1318,7 @@ class AgentMonitor extends WebTerminalApp {
         }
     }
 }
+AgentMonitor.KERNEL_AGENTS = ['SessionManager', 'RegistryManager'];
 
 // WebRuntime is a follower-only OneOS runtime that can run workloads in WebWorker threads.
 // This can be activated by the user
@@ -1277,6 +1355,7 @@ window.addEventListener('load', () => {
         'resourceMonitor': ResourceMonitor,
         'fsViewer': FileSystemViewer,
         'textEditor': TextEditor,
+        'imageViewer': ImageViewer,
         'ioMonitor': IOMonitor,
         'agentMonitor': AgentMonitor
     };

@@ -39,6 +39,8 @@
     <Folder Include="Examples\RIoT-PRED\" />
     <Folder Include="Examples\RIoT-STATS\" />
     <Folder Include="Examples\RIoT-TRAIN\" />
+    <Folder Include="Examples\SmartConcierge\faces\" />
+    <Folder Include="Examples\SmartConcierge\weights\" />
     <Folder Include="Examples\VideoSurveillance\" />
     <Folder Include="Examples\YSB\" />
   </ItemGroup>

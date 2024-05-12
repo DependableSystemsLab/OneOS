@@ -180,7 +180,7 @@ table.sortable-table > tbody > tr > td {
     background: #e8e8e8;
     border: 1px solid #444;
     box-shadow: 0 0 1em #000a;
-    opacity: 0.5;
+    opacity: 0.7;
     transition: opacity 0.2s;
     z-index: 1;
 }
@@ -442,7 +442,8 @@ table.sortable-table > tbody > tr > td {
 }
 
 .desktop>.content {
-
+    width: 100%;
+    height: 100%;
 }
 
 .desktop>.content>.fs-object {

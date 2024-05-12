@@ -230,6 +230,10 @@ const agentMonitor = (() => {
 			const stream = streams[uri];
 			const handler = payload => ws.send(payload);
 			stream.on('data', handler);
+			stream.on('error', err => {
+				stream.off('data', handler);
+				delete streams[uri];
+			});
 			ws.on('close', evt => {
 				stream.off('data', handler);
 				if (stream.listeners('data').length === 0) {
@@ -319,6 +323,11 @@ const commBroker = (() => {
 					agentMonitor.subscribe(ws, message.uri);
 					meta.connection = 'AgentMonitor';
 				}
+				else if (message.connection === 'ResourceMonitor') {
+					console.log('WebSocket client wants to be notified about the runtime, creating ResourceMonitor');
+					runtimeManager.subscribe(ws);
+					meta.connection = 'ResourceMonitor';
+				}
 				else {
 					console.log('WebSocket client requesting invalid connection');
 				}
@@ -386,7 +395,7 @@ const fsManager = (() => {
 					res.status(400).send('Cannot POST to directory');
 				}
 				else if (stats.isFile()) {
-					fs.writeFile(abspath, req.body.content, (err) => {
+					fs.writeFile(abspath, req.body.content, 'utf8', (err) => {
 						res.json({ error: err ? err.message : null });
 					});
 				}
@@ -431,7 +440,25 @@ const runtimeManager = (() => {
 		res.json(list);
 	});
 
-	return router;
+	// runtime event listeners
+	const runtimeEventSubscribers = [];
+
+	// listen to events
+	process.runtime.events.on('data', data => {
+		runtimeEventSubscribers.forEach(ws => ws.send(JSON.stringify(data)));
+	});
+
+	return {
+		subscribe: (ws) => {
+			runtimeEventSubscribers.push(ws);
+
+			ws.on('close', evt => {
+				const index = runtimeEventSubscribers.indexOf(ws);
+				runtimeEventSubscribers.splice(index, 1);
+			});
+		},
+		router: router
+	}
 })();
 
 // main express app
@@ -445,7 +472,7 @@ app.use(sessionManager.loginRouter);
 app.use(sessionManager.authenticate);
 
 app.use('/fs', fsManager);
-app.use('/runtime', runtimeManager);
+app.use('/runtime', runtimeManager.router);
 
 app.use('/', express.static('client', { extensions: ['html'] }));
 

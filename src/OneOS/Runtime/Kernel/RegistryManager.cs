@@ -10,8 +10,6 @@ using Newtonsoft.Json.Linq;
 
 using OneOS.Common;
 using OneOS.Language;
-using Confluent.Kafka;
-using System.Xml.Xsl;
 
 namespace OneOS.Runtime.Kernel
 {
@@ -578,6 +576,76 @@ namespace OneOS.Runtime.Kernel
         }
 
         [RpcMethod]
+        public async Task<object> DownloadFileFromLocalhost(string cwd, string pathOnLocalhost, string saveName = null)
+        {
+            try
+            {
+                //var response = await HttpClient.GetByteArrayAsync(webURL);
+                //var stream = await HttpClient.GetStreamAsync(webURL);
+                var stream = File.OpenRead(pathOnLocalhost);
+
+                var fileName = saveName != null ? saveName : Path.GetFileName(pathOnLocalhost);
+                var absPath = Helpers.ResolvePath(cwd, fileName);
+
+                await CreateFileIfNotFound(absPath);
+
+                var locations = Runtime.Registry.ListFileLocations(absPath);
+
+                //var operations = locations.Select(item => Request(item.Key + "/storage", "WriteFile", item.Value, response)).ToList();
+                var operations = locations.Select(async item =>
+                {
+                    var tempClientUri = Helpers.RandomText.Next();
+
+                    var accessKey = await Request(item.Key + "/storage", "CreateWriteStream", item.Value, tempClientUri, absPath);
+
+                    var client = await StorageAgent.GetWriteStream((string)accessKey);
+
+                    return (tempClientUri, client);
+                }).ToList();
+
+                var writers = await Task.WhenAll(operations);
+
+                var buffer = new byte[65536];
+                while (true)
+                {
+                    int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+                    if (bytesRead > 0)
+                    {
+                        foreach (var writer in writers)
+                        {
+                            await writer.client.Stream.WriteAsync(buffer, 0, bytesRead);
+                        }
+                    }
+                    else
+                    {
+                        foreach (var writer in writers)
+                        {
+                            await writer.client.Stop();
+
+                            // emit lifecycle event to emulate end of stream
+                            // (TODO: this is hacky -- update CreateWriteStream in StorageAgent to better
+                            //        accommodate this use case)
+                            var evt = new ObjectMessage<Dictionary<string, string>>(new Dictionary<string, string>()
+                            {
+                                { "type", "end" },
+                                { "agent", writer.tempClientUri }
+                            });
+                            var message = CreateMessage("events." + Runtime.Domain + "/agent-lifecycle", evt.Serialize());
+                            Outbox.Write(message);
+                        }
+                        break;
+                    }
+                }
+
+                return absPath;
+            }
+            catch (HttpRequestException e)
+            {
+                throw new OperationError($"Error while downloading {pathOnLocalhost} from localhost: {e.Message}");
+            }
+        }
+
+        [RpcMethod]
         public async Task<object> CreateSocket(string owner, long port, string hostRuntime)
         {
             var socket = Runtime.Registry.CreateSocket(owner, port, hostRuntime);
@@ -644,7 +712,18 @@ namespace OneOS.Runtime.Kernel
                     if (item.Value.StandbyRuntime != null)
                     {
                         item.Value.Runtime = item.Value.StandbyRuntime;
-                        item.Value.StandbyRuntime = ActiveRuntimes.Where(uri => uri != item.Value.Runtime).ToList().PickRandom();   // TODO: we need to get the scheduler to pick an appropriate runtime
+                        var eligible = item.Value.RuntimePool.Where(uri => uri != runtimeUri && uri != item.Value.Runtime && ActiveRuntimes.Contains(uri)).ToList();
+                        if (eligible.Count > 0)
+                        {
+                            item.Value.StandbyRuntime = eligible[0];
+                        }
+                        else
+                        {
+                            // No choice but to pick a runtime outside of the eligible pool
+                            item.Value.StandbyRuntime = ActiveRuntimes.Where(uri => uri != item.Value.Runtime).ToList().PickRandom();
+                        }
+
+                        //item.Value.StandbyRuntime = ActiveRuntimes.Where(uri => uri != item.Value.Runtime).ToList().PickRandom();   // TODO: we need to get the scheduler to pick an appropriate runtime
                     }
                     else
                     {
@@ -666,13 +745,56 @@ namespace OneOS.Runtime.Kernel
 
                 if (item.Value.StandbyRuntime == runtimeUri)
                 {
-                    item.Value.StandbyRuntime = ActiveRuntimes.Where(uri => uri != item.Value.Runtime).ToList().PickRandom();   // TODO: we need to get the scheduler to pick an appropriate runtime
+                    var eligible = item.Value.RuntimePool.Where(uri => uri != runtimeUri && uri != item.Value.Runtime && ActiveRuntimes.Contains(uri)).ToList();
+                    if (eligible.Count > 0)
+                    {
+                        item.Value.StandbyRuntime = eligible[0];
+                    }
+                    else
+                    {
+                        // No choice but to pick a runtime outside of the eligible pool
+                        item.Value.StandbyRuntime = ActiveRuntimes.Where(uri => uri != item.Value.Runtime).ToList().PickRandom();
+                    }
+
+                    //item.Value.StandbyRuntime = ActiveRuntimes.Where(uri => uri != item.Value.Runtime).ToList().PickRandom();   // TODO: we need to get the scheduler to pick an appropriate runtime
                 }
             }
 
             await Runtime.SyncRegistry();
 
             Console.WriteLine($"{this} Dropped Runtime {runtimeUri}");
+
+            return runtimeUri;
+        }
+
+        [RpcMethod]
+        public async Task<object> AdmitRuntime(string runtimeUri)
+        {
+            Console.WriteLine($"{this} Admitting Runtime {runtimeUri}");
+
+            int changesMade = 0;
+
+            foreach (var item in Runtime.Registry.Agents)
+            {
+                // update agents whose StandbyRuntime were arbitrarily assigned
+                // due to none of the runtimes in the eligible pool being available
+                if (item.Value.StandbyRuntime != null && !item.Value.RuntimePool.Contains(item.Value.StandbyRuntime))
+                {
+                    var eligible = item.Value.RuntimePool.Where(uri => uri != item.Value.Runtime && ActiveRuntimes.Contains(uri)).ToList();
+                    if (eligible.Count > 0)
+                    {
+                        item.Value.StandbyRuntime = eligible[0];
+                        changesMade++;
+                    }
+                }
+            }
+
+            if (changesMade > 0)
+            {
+                await Runtime.SyncRegistry();
+            }
+
+            Console.WriteLine($"{this} Admitted Runtime {runtimeUri}");
 
             return runtimeUri;
         }

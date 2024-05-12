@@ -18,9 +18,11 @@
 policy BasicPolicy () for VideoSurveillance {
     place (#camera || #webcam) streamer;
 
-    always () detector;
+    //always () detector;
 
-    min_rate (2.5) e1, e2, e3;
+    console () notifier;
+
+    //min_rate (2.5) e1, e2, e3;
 };
 
-spawn VideoSurveillance("/dev/z4-01.jungabyte.com/vid0", "recorded", "jungkumseok@gmail.com") with BasicPolicy();
+spawn VideoSurveillance("/dev/test-0.jungabyte.com/webcam-0", "recorded", "jungkumseok@gmail.com") with BasicPolicy();

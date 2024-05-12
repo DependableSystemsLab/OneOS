@@ -36,9 +36,9 @@ namespace OneOS.Runtime
             var copyHolder = locations.Keys.Where(uri => Runtime.ActiveRuntimes.Contains(uri)).ToList().PickRandom();
             var copyPath = locations[copyHolder];
 
-            Console.WriteLine($"Reading {copyPath} from {copyHolder}");
+            Console.WriteLine($"Reading Text File {copyPath} from {copyHolder}");
             var content = await Request(copyHolder + "/storage", "ReadTextFile", copyPath);
-            Console.WriteLine($"{this} {content.GetType()}");
+            //Console.WriteLine($"{this} {content.GetType()}");
 
             return (string)content;
         }
@@ -73,6 +73,35 @@ namespace OneOS.Runtime
             Console.WriteLine($"Wrote {absoluteVirtualPath} on {string.Join(", ", locations.Keys)}");
 
             return (string)content;
+        }
+
+        public async Task<byte[]> ReadFile(string absoluteVirtualPath)
+        {
+            var locations = Runtime.Registry.ListFileLocations(absoluteVirtualPath, Runtime.URI);
+            var copyHolder = locations.Keys.Where(uri => Runtime.ActiveRuntimes.Contains(uri)).ToList().PickRandom();
+            var copyPath = locations[copyHolder];
+
+            Console.WriteLine($"Reading File {copyPath} from {copyHolder}");
+            var content = await Request(copyHolder + "/storage", "ReadFile", copyPath);
+            //Console.WriteLine($"{this} {content.GetType()}");
+
+            return (byte[])content;
+        }
+
+        public async Task<bool> WriteFile(string absoluteVirtualPath, byte[] content)
+        {
+            //var filePath = await Request(Runtime.RegistryManagerUri, "CreateFile", absoluteVirtualPath);
+            var filePath = await Request(Runtime.RegistryManagerUri, "CreateFileIfNotFound", absoluteVirtualPath);
+
+            var locations = Runtime.Registry.ListFileLocations(absoluteVirtualPath);
+
+            var operations = locations.Select(item => Request(item.Key + "/storage", "WriteFile", item.Value, content)).ToList();
+
+            await Task.WhenAny(operations);
+
+            Console.WriteLine($"Wrote {absoluteVirtualPath} on {string.Join(", ", locations.Keys)}");
+
+            return false;
         }
 
         public async Task<string> TouchFile(string absoluteVirtualPath)

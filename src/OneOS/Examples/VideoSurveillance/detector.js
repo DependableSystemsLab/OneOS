@@ -21,7 +21,7 @@ function detectMotion() {
 		function sendDiff(vals) {
 			let diff = jimp.diff(vals[0], vals[1]);
 
-			diff.image.getBuffer(jimp.MIME_PNG, function (err, buf) {
+			diff.image.getBuffer(jimp.MIME_JPEG, function (err, buf) {
 				//if (!err) outStream.write(buf);
 				if (err) console.error(err);
 			});
@@ -49,6 +49,7 @@ function detectMotion() {
 }
 
 process.stdin.segment.on('data', function (frame) {
+	console.log('received ' + frame.length + ' bytes');
 	if (frames.length >= buf_size) frames.shift();
 	frames.push(frame);
 	frame_count++;

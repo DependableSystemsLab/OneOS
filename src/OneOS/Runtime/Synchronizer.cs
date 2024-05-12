@@ -22,12 +22,12 @@ namespace OneOS.Runtime
             public PeerStatus()
             {
                 IsAlive = false;
-                LastChecked = DateTime.Now - TimeSpan.FromMilliseconds(HeartbeatTimeoutInterval.TotalMilliseconds) + TimeSpan.FromMilliseconds(3000 * Random.NextDouble());
+                LastChecked = DateTime.Now - TimeSpan.FromMilliseconds(HeartbeatTimeoutInterval.TotalMilliseconds) + TimeSpan.FromMilliseconds(1000 * Random.NextDouble());
                 LastHeard = LastChecked - HeartbeatTimeoutInterval;
             }
         }
 
-        private static TimeSpan HeartbeatTimeoutInterval = TimeSpan.FromMilliseconds(15000.0);
+        private static TimeSpan HeartbeatTimeoutInterval = TimeSpan.FromMilliseconds(5000.0);
         private static Random Random;
 
         Runtime Runtime;

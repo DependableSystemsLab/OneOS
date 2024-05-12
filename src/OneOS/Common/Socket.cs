@@ -190,8 +190,12 @@ namespace OneOS.Common
                             {
                                 onMessage.Invoke(buffer.Take(bytesRead).ToArray());
                             }
+                            else
+                            {
+                                await Task.Delay(50);
+                            }
 
-                            await Task.Yield();
+                            //await Task.Yield();
                         }
                     }
                     catch (OperationCanceledException ex)
@@ -203,6 +207,7 @@ namespace OneOS.Common
                     catch (IOException ex)
                     {
                         Console.WriteLine($"{this.GetType().Name} had an IOException");
+                        Console.WriteLine(ex);
                         exitException = ex;
                     }
                     catch (ObjectDisposedException ex)

@@ -447,13 +447,25 @@ namespace OneOS.Language
                 return new Object(result);
             });
 
-            /*context["lget"] = new AsyncFunction(async (ctx, args) =>
+#if DEBUG
+            // WARN: lget reads from the host device -- this command is meant to be used
+            //       only during development for copying files from the local device into the file system
+            context["lget"] = new AsyncFunction(async (ctx, args) =>
             {
                 if (args.Length < 2)
                 {
-                    return new Object("You must provide the path of the file local to the device the terminal is running on");
+                    return new Object("You must provide the path of the file local to the device the terminal is running on, and the destination path");
                 }
-            });*/
+
+                var cwd = (string)((Dict)context["ENV"])["CWD"].Value;
+                var pathOnLocalhost = (string)args[0].Value;
+                var savePath = args.Length > 1 ? (string)args[1].Value : null;
+
+                var result = await RequestRegistryManager("DownloadFileFromLocalhost", cwd, pathOnLocalhost, savePath);
+
+                return new Object(result);
+            });
+#endif
 
             // For OneOS Debugging
             context["pipe"] = new AsyncFunction(async (ctx, args) =>

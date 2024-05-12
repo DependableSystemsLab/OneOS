@@ -638,6 +638,7 @@ namespace OneOS.Runtime
             public bool OutputToShell;
             public string BinaryPath;
             public string Arguments;
+            public List<string> RuntimePool = new List<string>();
             public List<string> Subscriptions = new List<string>();
             public int CheckpointInterval;
             public float OutputRateLimit;
@@ -660,6 +661,7 @@ namespace OneOS.Runtime
                     { "outputToShell", OutputToShell },
                     { "binary", BinaryPath },
                     { "arguments", Arguments },
+                    { "runtimePool", JArray.FromObject(RuntimePool) },
                     { "subscriptions", JArray.FromObject(Subscriptions) },
                     { "checkpointInterval", CheckpointInterval },
                     { "outputRateLimit", OutputRateLimit },
@@ -683,6 +685,7 @@ namespace OneOS.Runtime
                     OutputToShell = json["outputToShell"].ToObject<bool>(),
                     BinaryPath = json["binary"].ToObject<string>(),
                     Arguments = json["arguments"].ToObject<string>(),
+                    RuntimePool = json["runtimePool"].ToObject<List<string>>(),
                     Subscriptions = json["subscriptions"].ToObject<List<string>>(),
                     CheckpointInterval = json["checkpointInterval"].ToObject<int>(),
                     OutputRateLimit = json["outputRateLimit"].ToObject<float>(),

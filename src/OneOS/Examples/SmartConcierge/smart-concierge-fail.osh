@@ -1,0 +1,31 @@
+graph SmartConcierge (inputDevice, saveFilePath, clientEmail) {
+  init {
+    print("Starting Smart Concierge");
+  }
+
+  node streamer: process("node", "streamer.js " + inputDevice, { "outputFormat": "json" });
+  node recognizer: process("node", "recognizer.js config.json", { "outputFormat": "json" });
+  node concierge: process("node", "concierge.js", { "inputFormat": "json", "outputFormat": "json" });
+  node doorlock: process("node", "doorlock.js", { "inputFormat": "json", "outputFormat": "json" });
+  node notifier: process("node", "notifier.js " + clientEmail, { "inputFormat": "json", "outputFormat": "json" });
+  node viewer: process("node", "viewer.js", { "inputFormat": "json" });
+  
+  edge e1: streamer -> viewer;
+  edge e2: recognizer -> concierge;
+  edge e3: recognizer -> viewer;
+  edge e4: concierge -> doorlock;
+  edge e5: concierge -> notifier;
+  edge e6: doorlock -> viewer;
+  edge e7: notifier -> viewer;
+  
+};
+
+policy BasicPolicy () for SmartConcierge {
+    place (#tensorflow) streamer, recognizer;
+    place (#edge) concierge, doorlock;
+    place (#cloud) notifier, viewer;
+
+    //console () viewer, concierge, doorlock, notifier;
+};
+
+spawn SmartConcierge("/dev/test-0.jungabyte.com/webcam-0", "recorded", "jungkumseok@gmail.com") with BasicPolicy();

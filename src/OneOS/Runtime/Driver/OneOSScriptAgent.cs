@@ -70,7 +70,7 @@ namespace OneOS.Runtime.Driver
                 // TODO: Notify Runtime about the exit event.
                 // This is important, as any downstream processes will
                 // keep their inputs open unless the upstream process closes it
-                //OnExit?.Invoke(this, new EventArgs());
+                OnExit?.Invoke(this, new EventArgs());
             });
         }
 

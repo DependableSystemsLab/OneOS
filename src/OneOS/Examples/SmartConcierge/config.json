@@ -1,0 +1,9 @@
+{
+  "deviceUri": "/dev/test-0.jungabyte.com/webcam-0",
+  "faces": [
+    {
+      "label": "employee",
+      "images": [ "faces/jung.jpg" ]
+    }
+  ]
+}
