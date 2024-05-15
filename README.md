@@ -65,7 +65,7 @@ Once inside the shell environment, you can navigate using traditional Linux comm
 
 Here are some of the publications and other materials that discuss OneOS in more depth:
 
-* [Conference Paper (IoTDI 2024)](https://blogs.ubc.ca/dependablesystemslab/2024/01/19/immunoplane-middleware-for-providing-adaptivity-to-distributed-internet-of-things-applications/) - ImmunoPlane: Middleware for Providing Adaptivity to Distributed Internet-of-Things Applications
+* [Conference Paper (IoTDI 2024)](https://people.ece.ubc.ca/kumseok/papers/iotdi24-jung-immunoplane.pdf) - ImmunoPlane: Middleware for Providing Adaptivity to Distributed Internet-of-Things Applications
 * [Conference Paper (SEC 2021)](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=9708969&casa_token=YqZL8J6f7fcAAAAA:z4GjMAaI_v5ERFvP_9n6UTcVG70h5UDIxbU5an_77bg4HJqyV9FUjgmPl-obbzhK8-MGKf7j&tag=1) - OneOS: Middleware for running edge computing applications as distributed POSIX pipelines
 * [Short Paper (Middleware 2021)](https://dl.acm.org/doi/abs/10.1145/3491087.3493677) - OneOS: a distributed operating system for the Internet of Things
 * [Poster (EuroSys 2019)](http://ece.ubc.ca/~kumseok/assets/OneOS-Poster-EuroSys19.pdf), [Abstract](https://www.eurosys2019.org/wp-content/uploads/2019/03/eurosys19posters-abstract72.pdf), and [Demo Video (No Sound)](http://ece.ubc.ca/~kumseok/assets/OneOS-Demo-EuroSys19.mp4) - [EuroSys2019](https://www.eurosys2019.org/accepted-posters/)
