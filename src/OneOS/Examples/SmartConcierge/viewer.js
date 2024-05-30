@@ -87,6 +87,12 @@ table th {
 table tr:not(:first-child) {
     border-top: 1px solid #aaa;
 }
+div.message-warning {
+    background: #ff6b54;
+    color: white;
+    font-weight: 600;
+    padding: 0.2em;
+}
 #logs {
     flex:3;
     background: white;
@@ -153,6 +159,16 @@ table tr:not(:first-child) {
                         <td id="runtime-status-4"></td>
                         <td id="runtime-comps-4"></td>
                     </tr>
+                    <tr>
+                        <th>5</th>
+                        <td id="runtime-status-5"></td>
+                        <td id="runtime-comps-5"></td>
+                    </tr>
+                    <tr>
+                        <th>6</th>
+                        <td id="runtime-status-6"></td>
+                        <td id="runtime-comps-6"></td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -185,8 +201,9 @@ class StopWatch {
     }
 }
 
-//const doorOpenAudio = new Audio('/assets/door-open.mp3');
-//const doorCloseAudio = new Audio('/assets/door-close.mp3');
+const doorOpenAudio = new Audio('/assets/door-open.mp3');
+const doorCloseAudio = new Audio('/assets/door-close.mp3');
+const alertAudio = new Audio('/assets/alert.mp3');
 
 const components = [ 'streamer.js', 'recognizer.js', 'concierge.js', 'doorlock.js', 'notifier.js', 'viewer.js' ];
 
@@ -195,7 +212,9 @@ const runtimeMap = {
     'test-1.jungabyte.com': 1,
     'test-2.jungabyte.com': 2,
     'test-3.jungabyte.com': 3,
-    'test-4.jungabyte.com': 4
+    'test-4.jungabyte.com': 4,
+    'z-1.jungabyte.com': 5,
+    'z-2.jungabyte.com': 6
 };
 
 const agentMap = {}
@@ -237,6 +256,15 @@ function renderAgents(){
     })
 }
 
+function displayMessage(message, className){
+    const msgDiv = document.createElement('div');
+    if (className) msgDiv.classList.add(className);
+    msgDiv.appendChild(document.createTextNode(message));
+    logDiv.appendChild(msgDiv);
+
+    logDiv.scrollTop = logDiv.scrollHeight;
+}
+
 fetch('runtimes').then(resp => resp.json()).then(list => list.forEach(item => {
     const innerHTML = item.status === 'Alive' ? '<span style="display:inline-block;padding:0.5em;background:#44FC17">Alive</span>' : '<span style="display:inline-block;padding:0.5em;background:#DC7E7E;color:#555">Dead</span>';
     document.getElementById('runtime-status-' + runtimeMap[item.uri]).innerHTML = innerHTML;
@@ -270,37 +298,30 @@ socket.addEventListener('message', evt => {
     if (message.event){
         if (message.event === 'door-open'){
             doorState.innerHTML = '<span style="display:inline-block;padding:0.5em;background:#44FC17">Open</span>';
-            //doorOpenAudio.play();
+
+            displayMessage('Opening Door');
+            doorOpenAudio.play();
         }
         else if (message.event === 'door-close'){
             doorState.innerHTML = '<span style="display:inline-block;padding:0.5em;background:#DC7E7E;color:#555">Closed</span>';
-            //doorCloseAudio.play();
+
+            displayMessage('Closing Door');
+            doorCloseAudio.play();
         }
         else if (message.event === 'runtime-leave'){
-            const msgDiv = document.createElement('div');
-            msgDiv.appendChild(document.createTextNode('Runtime ' + runtimeMap[message.data] + ' left'));
-            logDiv.appendChild(msgDiv);
-
-            logDiv.scrollTop = logDiv.scrollHeight;
+            displayMessage('Runtime ' + runtimeMap[message.data] + ' left');
 
             document.getElementById('runtime-status-' + runtimeMap[message.data]).innerHTML = '<span style="display:inline-block;padding:0.5em;background:#DC7E7E;color:#555">Dead</span>';
         }
         else if (message.event === 'runtime-join'){
-            const msgDiv = document.createElement('div');
-            msgDiv.appendChild(document.createTextNode('Runtime ' + runtimeMap[message.data] + ' joined'));
-            logDiv.appendChild(msgDiv);
-
-            logDiv.scrollTop = logDiv.scrollHeight;
+            displayMessage('Runtime ' + runtimeMap[message.data] + ' joined');
 
             document.getElementById('runtime-status-' + runtimeMap[message.data]).innerHTML = '<span style="display:inline-block;padding:0.5em;background:#44FC17">Alive</span>';
         }
         else if (message.event === 'agent-join'){
-            const msgDiv = document.createElement('div');
             const filename = message.data.uri.split('/').slice(-2)[0];
-            msgDiv.appendChild(document.createTextNode('Node ' + filename + ' started on Runtime ' + runtimeMap[message.data.runtime]));
-            logDiv.appendChild(msgDiv);
 
-            logDiv.scrollTop = logDiv.scrollHeight;
+            displayMessage('Node ' + filename + ' started on Runtime ' + runtimeMap[message.data.runtime]);
 
             if (components.includes(filename)){
                 agentMap[filename] = message.data.runtime;
@@ -308,16 +329,17 @@ socket.addEventListener('message', evt => {
 
             renderAgents();
         }
+        else if (message.event === 'unknown-person-detected'){
+            displayMessage('\u26a0 Unknown person detected!', 'message-warning');
+
+            alertAudio.play();
+        }
 
         console.log(message);
     }
 
     if (message.message){
-        const msgDiv = document.createElement('div');
-        msgDiv.appendChild(document.createTextNode(message.message));
-        logDiv.appendChild(msgDiv);
-
-        logDiv.scrollTop = logDiv.scrollHeight;
+        displayMessage(message.message);
     }
 
     fpsOverlay.innerHTML = fps.roundedRate + ' FPS, ' + dps.roundedRate + ' DPS';

@@ -8,7 +8,7 @@ const recipient = process.argv[2];
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 
-const notificationCooldown = 20000;
+const notificationCooldown = 8000;
 let lastNotified = Date.now();
 
 function start(config) {
@@ -53,6 +53,15 @@ function start(config) {
 				process.stdout.json.write({
 					message: 'Notified ' + config.admin_email + ' about Guest'
 				})
+			});
+		}
+
+		if (data.type === 'unknown-detected' && (now - lastNotified > notificationCooldown)) {
+
+			lastNotified = Date.now();
+
+			process.stdout.json.write({
+				event: 'unknown-person-detected'
 			});
 		}
 	});

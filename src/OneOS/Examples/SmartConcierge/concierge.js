@@ -1,5 +1,5 @@
 const activationCooldown = 8000;
-const notificationCooldown = 20000;
+const notificationCooldown = 8000;
 
 let prevLabels = [];
 let lastActivation = Date.now();
@@ -32,6 +32,15 @@ process.stdin.json.on('data', message => {
             console.log('  notifying manager!');
             process.stdout.json.write({
                 type: 'guest-detected'
+            });
+
+            lastNotification = now;
+        }
+
+        if (diff.added.includes('unknown') && (now - lastNotification > notificationCooldown)) {
+            console.log('  notifying manager!');
+            process.stdout.json.write({
+                type: 'unknown-detected'
             });
 
             lastNotification = now;

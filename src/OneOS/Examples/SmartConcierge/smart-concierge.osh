@@ -8,6 +8,7 @@ graph SmartConcierge (inputDevice, saveFilePath, clientEmail) {
   node concierge: process("node", "concierge.js", { "inputFormat": "json", "outputFormat": "json" });
   node doorlock: process("node", "doorlock.js", { "inputFormat": "json", "outputFormat": "json" });
   node notifier: process("node", "notifier.js " + clientEmail, { "inputFormat": "json", "outputFormat": "json" });
+  node actuator: process("node", "door-actuator.js", { "inputFormat": "json", "outputFormat": "json" });
   node viewer: process("node", "viewer.js", { "inputFormat": "json" });
   
   edge e1: streamer -> viewer;
@@ -17,13 +18,15 @@ graph SmartConcierge (inputDevice, saveFilePath, clientEmail) {
   edge e5: concierge -> notifier;
   edge e6: doorlock -> viewer;
   edge e7: notifier -> viewer;
+  edge e8: doorlock -> actuator;
   
 };
 
 policy BasicPolicy () for SmartConcierge {
-    place (#tensorflow) streamer, recognizer;
+    place (#camera) streamer, recognizer;
     place (#edge) concierge, doorlock;
     place (#cloud) notifier, viewer;
+    place (#actuator) actuator;
 
     always () concierge, doorlock, notifier;
 

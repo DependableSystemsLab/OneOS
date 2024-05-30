@@ -637,6 +637,32 @@ const Runtime = {
                         rxServer.close();
                     });
                 });
+
+                // On UNIX, there could be an existing socket with the same name,
+                // if the previous owner process of the socket experienced an unclean exit (e.g., SIGKILL).
+                // In that case, there would be a zombie socket, which need to be removed.
+                // We check whether the socket is a zombie or not by trying to connect to it.
+                rxServer.on('error', err => {
+                    if (err.code === 'EADDRINUSE') {
+                        let rxTempClient = new net.Socket();
+                        rxTempClient.on('error', err2 => {
+                            // The socket is indeed a zombie socket.
+                            // Safe to remove and create a new one
+                            if (err2.code === 'ECONNREFUSED') {
+                                fs.unlinkSync(rxSocketName);
+                                rxServer.listen(rxSocketName, () => {
+                                });
+                            }
+                        });
+                        rxTempClient.connect(rxSocketName, () => {
+                            // If connection was successful, then there is an owner process.
+                            // This process needs to exit
+                            console.error(`Another process is already running for Agent ${root.meta.uri}`);
+                            process.exit(1);
+                        });
+                    }
+                });
+
                 rxServer.listen(rxSocketName, () => {
                 });
 
@@ -650,6 +676,32 @@ const Runtime = {
                         txServer.close();
                     });
                 });
+
+                // On UNIX, there could be an existing socket with the same name,
+                // if the previous owner process of the socket experienced an unclean exit (e.g., SIGKILL).
+                // In that case, there would be a zombie socket, which need to be removed.
+                // We check whether the socket is a zombie or not by trying to connect to it.
+                txServer.on('error', err => {
+                    if (err.code === 'EADDRINUSE') {
+                        let txTempClient = new net.Socket();
+                        txTempClient.on('error', err2 => {
+                            // The socket is indeed a zombie socket.
+                            // Safe to remove and create a new one
+                            if (err2.code === 'ECONNREFUSED') {
+                                fs.unlinkSync(txSocketName);
+                                txServer.listen(txSocketName, () => {
+                                });
+                            }
+                        });
+                        txTempClient.connect(txSocketName, () => {
+                            // If connection was successful, then there is an owner process.
+                            // This process needs to exit
+                            console.error(`Another process is already running for Agent ${root.meta.uri}`);
+                            process.exit(1);
+                        });
+                    }
+                });
+
                 txServer.listen(txSocketName, () => {
                 });
 

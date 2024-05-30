@@ -1391,6 +1391,7 @@ namespace OneOS.Runtime
             if (StandbyAgents.ContainsKey(agentInfo.URI))
             {
                 StandbyAgents.Remove(agentInfo.URI);
+                Console.WriteLine($"{this} Removed Standby Agent {agentInfo.URI}");
             }
         }
 
